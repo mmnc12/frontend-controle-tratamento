@@ -1,0 +1,325 @@
+import { useState } from 'react';
+import { 
+  Plus, 
+  Search, 
+  Edit, 
+  Trash2, 
+  X,
+  AlertCircle
+} from 'lucide-react';
+import { localidadeApi } from '../api';
+import type { Localidade, ApiError } from '../types';
+import toast from 'react-hot-toast';
+
+export default function Localidades() {
+  const [localidades, setLocalidades] = useState<Localidade[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [formData, setFormData] = useState({
+    codigo: '',
+    nome: '',
+    descricao: ''
+  });
+
+  // ============================================
+  // CARREGAR LOCALIDADES
+  // ============================================
+
+  const loadLocalidades = async () => {
+    try {
+      setLoading(true);
+      const data = await localidadeApi.listar();
+      setLocalidades(data);
+    } catch {
+      toast.error('Erro ao carregar localidades');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Carregar ao montar o componente
+  useState(() => {
+    loadLocalidades();
+  });
+
+  // ============================================
+  // FILTRAR LOCALIDADES
+  // ============================================
+
+  const filteredLocalidades = localidades.filter(item =>
+    item.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.codigo.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // ============================================
+  // ABRIR MODAL PARA CRIAR/EDITAR
+  // ============================================
+
+  const openModal = (localidade?: Localidade) => {
+    if (localidade) {
+      setEditingId(localidade.id);
+      setFormData({
+        codigo: localidade.codigo,
+        nome: localidade.nome,
+        descricao: localidade.descricao || ''
+      });
+    } else {
+      setEditingId(null);
+      setFormData({
+        codigo: '',
+        nome: '',
+        descricao: ''
+      });
+    }
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setEditingId(null);
+    setFormData({
+      codigo: '',
+      nome: '',
+      descricao: ''
+    });
+  };
+
+  // ============================================
+  // VALIDAR FORMULÁRIO
+  // ============================================
+
+  const validateForm = (): boolean => {
+    if (!formData.codigo.trim()) {
+      toast.error('O campo Código é obrigatório');
+      return false;
+    }
+    if (!formData.nome.trim()) {
+      toast.error('O campo Nome é obrigatório');
+      return false;
+    }
+    return true;
+  };
+
+  // ============================================
+  // SALVAR LOCALIDADE
+  // ============================================
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Validação com toast
+    if (!validateForm()) {
+      return;
+    }
+
+    try {
+      if (editingId) {
+        await localidadeApi.atualizar(editingId, formData);
+        toast.success('Localidade atualizada com sucesso!');
+      } else {
+        await localidadeApi.criar(formData);
+        toast.success('Localidade criada com sucesso!');
+      }
+      closeModal();
+      loadLocalidades();
+    } catch (error) {
+      const apiError = error as ApiError;
+      const message = apiError.response?.data?.message || 'Erro ao salvar localidade';
+      toast.error(message);
+    }
+  };
+
+  // ============================================
+  // DELETAR LOCALIDADE
+  // ============================================
+
+  const handleDelete = async (id: number, nome: string) => {
+    if (!confirm(`Tem certeza que deseja excluir a localidade "${nome}"?`)) {
+      return;
+    }
+
+    try {
+      await localidadeApi.deletar(id);
+      toast.success('Localidade excluída com sucesso!');
+      loadLocalidades();
+    } catch (error) {
+      const apiError = error as ApiError;
+      const message = apiError.response?.data?.message || 'Erro ao excluir localidade';
+      toast.error(message);
+    }
+  };
+
+  // ============================================
+  // RENDER
+  // ============================================
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800">Localidades</h1>
+          <p className="text-slate-500 text-sm">Gerencie as localidades do sistema</p>
+        </div>
+        <button
+          onClick={() => openModal()}
+          className="btn-primary flex items-center gap-2"
+        >
+          <Plus className="w-4 h-4" />
+          Nova Localidade
+        </button>
+      </div>
+
+      {/* Barra de busca */}
+      <div className="card">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Buscar por nome ou código..."
+              className="input-field pl-9"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="flex items-center gap-2 text-sm text-slate-500">
+            <span className="font-medium">{filteredLocalidades.length}</span>
+            <span>localidades encontradas</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabela */}
+      <div className="card p-0 overflow-hidden">
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : filteredLocalidades.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+            <AlertCircle className="w-12 h-12 mb-3" />
+            <p className="text-lg font-medium">Nenhuma localidade encontrada</p>
+            <p className="text-sm">Clique em "Nova Localidade" para adicionar</p>
+          </div>
+        ) : (
+          <div className="table-container">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Código</th>
+                  <th>Nome</th>
+                  <th>Descrição</th>
+                  <th className="text-right">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredLocalidades.map((item) => (
+                  <tr key={item.id}>
+                    <td className="font-mono text-sm font-medium text-slate-600">
+                      {item.codigo}
+                    </td>
+                    <td className="font-medium text-slate-800">{item.nome}</td>
+                    <td className="text-slate-500 max-w-xs truncate">
+                      {item.descricao || '-'}
+                    </td>
+                    <td className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => openModal(item)}
+                          className="p-1.5 rounded-lg hover:bg-primary-50 text-primary-600 transition-colors"
+                          title="Editar"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(item.id, item.nome)}
+                          className="p-1.5 rounded-lg hover:bg-rose-50 text-rose-600 transition-colors"
+                          title="Excluir"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Modal de criação/edição */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-4 border-b border-slate-200/60">
+              <h2 className="text-lg font-semibold text-slate-800">
+                {editingId ? 'Editar Localidade' : 'Nova Localidade'}
+              </h2>
+              <button
+                onClick={closeModal}
+                className="p-1 rounded-lg hover:bg-slate-100 transition-colors"
+              >
+                <X className="w-5 h-5 text-slate-500" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="p-4 space-y-4">
+              <div>
+                <label className="input-label">Código *</label>
+                <input
+                  type="text"
+                  className="input-field"
+                  placeholder="Ex: 001"
+                  value={formData.codigo}
+                  onChange={(e) => setFormData({ ...formData, codigo: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label className="input-label">Nome *</label>
+                <input
+                  type="text"
+                  className="input-field"
+                  placeholder="Ex: Centro"
+                  value={formData.nome}
+                  onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label className="input-label">Descrição</label>
+                <input
+                  type="text"
+                  className="input-field"
+                  placeholder="Ex: Bairro, Distrito, Povoado..."
+                  value={formData.descricao}
+                  onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
+                />
+              </div>
+
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className="btn-secondary flex-1"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="btn-primary flex-1"
+                >
+                  {editingId ? 'Atualizar' : 'Criar'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

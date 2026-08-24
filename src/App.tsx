@@ -7,6 +7,7 @@ import './index.css';
 
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import Localidades from './pages/Localidades';
 
 // ============================================
 // COMPONENTE PARA ROTAS PRIVADAS
@@ -42,6 +43,16 @@ function AppRoutes() {
           <PrivateRoute>
             <Layout>
               <Dashboard />
+            </Layout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/localidades"
+        element={
+          <PrivateRoute>
+            <Layout>
+              <Localidades />
             </Layout>
           </PrivateRoute>
         }
