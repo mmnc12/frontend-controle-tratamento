@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Activity, Mail, Lock, Eye, EyeOff } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { useAuth } from '../hooks/useAuth';
 
 export default function Login() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -17,16 +18,10 @@ export default function Login() {
     setLoading(true);
 
     try {
-      // Simular login (depois conectamos com a API)
-      if (formData.email === 'admin@sistema.com' && formData.senha === 'admin123') {
-        localStorage.setItem('token', 'fake-token');
-        toast.success('Login realizado com sucesso!');
-        navigate('/dashboard');
-      } else {
-        toast.error('Email ou senha incorretos');
-      }
+      await login(formData);
+      navigate('/dashboard');
     } catch {
-      toast.error('Erro ao fazer login');
+      // Erro já tratado no contexto
     } finally {
       setLoading(false);
     }
@@ -35,7 +30,6 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-slate-100 p-4">
       <div className="w-full max-w-md">
-        {/* Logo e Título */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary-600 to-primary-700 rounded-2xl shadow-lg shadow-primary-500/30 mb-4">
             <Activity className="w-8 h-8 text-white" />
@@ -48,10 +42,8 @@ export default function Login() {
           </p>
         </div>
 
-        {/* Card de Login */}
         <div className="card shadow-xl shadow-slate-200/50">
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Email */}
             <div>
               <label className="input-label">E-mail</label>
               <div className="relative">
@@ -67,7 +59,6 @@ export default function Login() {
               </div>
             </div>
 
-            {/* Senha */}
             <div>
               <label className="input-label">Senha</label>
               <div className="relative">
@@ -90,7 +81,6 @@ export default function Login() {
               </div>
             </div>
 
-            {/* Botão Login */}
             <button
               type="submit"
               className="btn-primary w-full"
@@ -107,7 +97,6 @@ export default function Login() {
             </button>
           </form>
 
-          {/* Rodapé */}
           <div className="mt-6 text-center text-xs text-slate-400 border-t border-slate-200/60 pt-4">
             Sistema de Controle de Tratamento • {new Date().getFullYear()}
           </div>

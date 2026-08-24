@@ -1,0 +1,47 @@
+import axios, { AxiosError } from 'axios';
+
+// ============================================
+// CONFIGURAÇÃO BASE DO AXIOS
+// ============================================
+
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// ============================================
+// INTERCEPTOR PARA ADICIONAR TOKEN
+// ============================================
+
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error: AxiosError) => {
+    return Promise.reject(error);
+  }
+);
+
+// ============================================
+// INTERCEPTOR PARA TRATAR ERROS
+// ============================================
+
+api.interceptors.response.use(
+  (response) => response,
+  (error: AxiosError) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('usuario');
+      window.location.href = '/';
+    }
+    return Promise.reject(error);
+  }
+);
+
+export default api;
