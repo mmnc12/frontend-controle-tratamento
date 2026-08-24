@@ -8,6 +8,7 @@ import './index.css';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Localidades from './pages/Localidades';
+import PSFs from './pages/PSFs'; // <-- NOVO
 
 // ============================================
 // COMPONENTE PARA ROTAS PRIVADAS
@@ -53,6 +54,16 @@ function AppRoutes() {
           <PrivateRoute>
             <Layout>
               <Localidades />
+            </Layout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/psf"
+        element={
+          <PrivateRoute>
+            <Layout>
+              <PSFs />
             </Layout>
           </PrivateRoute>
         }
