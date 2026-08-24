@@ -8,7 +8,8 @@ import './index.css';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Localidades from './pages/Localidades';
-import PSFs from './pages/PSFs'; // <-- NOVO
+import PSFs from './pages/PSFs';
+import RedeBasica from './pages/RedeBasica'; // <-- NOVO
 
 // ============================================
 // COMPONENTE PARA ROTAS PRIVADAS
@@ -64,6 +65,16 @@ function AppRoutes() {
           <PrivateRoute>
             <Layout>
               <PSFs />
+            </Layout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/rede-basica"
+        element={
+          <PrivateRoute>
+            <Layout>
+              <RedeBasica />
             </Layout>
           </PrivateRoute>
         }
