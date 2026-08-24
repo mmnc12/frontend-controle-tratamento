@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './contexts/AuthContext';
 import { useAuth } from './hooks/useAuth';
+import { Layout } from './components/layout';
 import './index.css';
 
 import Login from './pages/Login';
@@ -35,11 +36,16 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />} />
-      <Route path="/dashboard" element={
-        <PrivateRoute>
-          <Dashboard />
-        </PrivateRoute>
-      } />
+      <Route
+        path="/dashboard"
+        element={
+          <PrivateRoute>
+            <Layout>
+              <Dashboard />
+            </Layout>
+          </PrivateRoute>
+        }
+      />
     </Routes>
   );
 }
