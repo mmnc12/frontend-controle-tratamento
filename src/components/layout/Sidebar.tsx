@@ -23,10 +23,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   const menuItems = [
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { path: '/rotina', icon: ClipboardList, label: 'Rotina' },
+    { path: '/rede-basica', icon: Users, label: 'Rede Básica' },
     { path: '/localidades', icon: MapPin, label: 'Localidades' },
     { path: '/psf', icon: Building2, label: 'PSFs' },
-    { path: '/rede-basica', icon: Users, label: 'Rede Básica' },
-    { path: '/rotina', icon: ClipboardList, label: 'Rotina' },
     { path: '/relatorios', icon: FileText, label: 'Relatórios' },
     { path: '/configuracoes', icon: Settings, label: 'Configurações' },
   ];

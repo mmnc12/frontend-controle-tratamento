@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { 
-  Plus, 
-  Edit, 
-  Trash2, 
+import { useState, useCallback, useRef } from 'react';
+import {
+  Plus,
+  Edit,
+  Trash2,
   X,
   AlertCircle,
   Filter,
@@ -13,11 +13,14 @@ import {
   File,
   Calendar,
   CheckCircle,
-  AlertTriangle
+  AlertTriangle,
+  Search,
+  XCircle
 } from 'lucide-react';
 import { rotinaApi, localidadeApi, psfApi, relatorioApi } from '../api';
 import type { Rotina, Localidade, PSF, FiltrosRotina, ApiError } from '../types';
 import toast from 'react-hot-toast';
+import Pagination from '../components/ui/Pagination';
 
 export default function Rotina() {
   const [pacientes, setPacientes] = useState<Rotina[]>([]);
@@ -28,7 +31,19 @@ export default function Rotina() {
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [filtros, setFiltros] = useState<FiltrosRotina>({});
-  const isFirstRender = useRef(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Estados de paginação
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const itemsPerPage = 20;
+
+  // Controle de carregamento inicial
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
+
   const [formData, setFormData] = useState({
     ano: new Date().getFullYear(),
     nome: '',
@@ -64,43 +79,122 @@ export default function Rotina() {
   // CARREGAR DADOS
   // ============================================
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (searchTermParam?: string) => {
     try {
       setLoading(true);
-      const [pacientesData, localidadesData, psfsData] = await Promise.all([
-        rotinaApi.listar(filtros),
+      console.log('📊 Carregando página:', currentPage, 'com limite:', itemsPerPage);
+      console.log('📊 Buscando por:', searchTermParam || '');
+
+      const filtrosComBusca = { ...filtros };
+      if (searchTermParam && searchTermParam.trim()) {
+        filtrosComBusca.nome = searchTermParam.trim();
+      }
+
+      const [pacientesResponse, localidadesData, psfsData] = await Promise.all([
+        rotinaApi.listar(filtrosComBusca, currentPage, itemsPerPage),
         localidadeApi.listar(),
         psfApi.listar()
       ]);
-      setPacientes(pacientesData);
+
+      console.log('📊 Resposta da API:', pacientesResponse);
+
+      setPacientes(pacientesResponse.data || []);
+      setTotalPages(pacientesResponse.pagination?.totalPages || 1);
+      setTotalItems(pacientesResponse.pagination?.total || 0);
       setLocalidades(localidadesData);
       setPsfs(psfsData);
-    } catch {
-      toast.error('Erro ao carregar dados');
+    } catch (error) {
+      console.error('❌ Erro ao carregar dados:', error);
+      // Mostrar erro mais específico
+      if (error instanceof Error) {
+        toast.error(`Erro ao carregar dados: ${error.message}`);
+      } else {
+        toast.error('Erro ao carregar dados');
+      }
     } finally {
       setLoading(false);
     }
-  }, [filtros]);
+  }, [filtros, currentPage]);
 
-  // Carregar dados na primeira renderização
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      loadData();
+  // ============================================
+  // CARREGAR DADOS NA PRIMEIRA RENDERIZAÇÃO
+  // ============================================
+
+  if (!initialLoadDone) {
+    setInitialLoadDone(true);
+    loadData();
+  }
+
+  // ============================================
+  // DEBOUNCE PARA BUSCA EM TEMPO REAL
+  // ============================================
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
     }
-  }, [loadData]);
+
+    debounceTimer.current = setTimeout(() => {
+      setDebouncedSearchTerm(value);
+      setCurrentPage(1);
+      // Passar o valor diretamente para loadData
+      loadData(value);
+    }, 500);
+  };
+
+  // ============================================
+  // LIMPAR BUSCA
+  // ============================================
+
+  const limparBusca = () => {
+    setSearchTerm('');
+    setDebouncedSearchTerm('');
+    setCurrentPage(1);
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+      debounceTimer.current = null;
+    }
+    // Passar string vazia para loadData
+    loadData('');
+  };
 
   // ============================================
   // FILTRAR
   // ============================================
 
   const aplicarFiltros = () => {
-    loadData();
+    setCurrentPage(1);
+    setTimeout(() => {
+      loadData();
+    }, 0);
   };
 
   const limparFiltros = () => {
     setFiltros({});
-    setTimeout(() => loadData(), 0);
+    setSearchTerm('');
+    setDebouncedSearchTerm('');
+    setCurrentPage(1);
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
+    setTimeout(() => {
+      loadData();
+    }, 0);
+  };
+
+  // ============================================
+  // MUDAR PÁGINA
+  // ============================================
+
+  const handlePageChange = (page: number) => {
+    console.log('📄 Mudando para página:', page);
+    setCurrentPage(page);
+    setTimeout(() => {
+      loadData();
+    }, 0);
   };
 
   // ============================================
@@ -109,7 +203,6 @@ export default function Rotina() {
 
   const openModal = (paciente?: Rotina) => {
     if (paciente) {
-      // Formatar data para YYYY-MM-DD
       let dataTratamento = '';
       if (paciente.data_tratamento) {
         if (paciente.data_tratamento.includes('T')) {
@@ -118,7 +211,7 @@ export default function Rotina() {
           dataTratamento = paciente.data_tratamento;
         }
       }
-      
+
       setEditingId(paciente.id);
       setFormData({
         ano: paciente.ano,
@@ -204,7 +297,6 @@ export default function Rotina() {
       return;
     }
 
-    // Verificar regras de negócio antes de enviar
     if (formData.revisao === 'S' && !formData.data_tratamento) {
       toast.error('Não é possível marcar revisão como feita sem uma data de tratamento');
       return;
@@ -225,7 +317,6 @@ export default function Rotina() {
       return;
     }
 
-    // Validar data futura
     if (formData.data_tratamento && isDataFutura(formData.data_tratamento)) {
       toast.error('Não é possível registrar uma data de tratamento no futuro');
       return;
@@ -258,7 +349,9 @@ export default function Rotina() {
         toast.success('Paciente cadastrado com sucesso!');
       }
       closeModal();
-      loadData();
+      setTimeout(() => {
+        loadData();
+      }, 0);
     } catch (error) {
       const apiError = error as ApiError;
       const message = apiError.response?.data?.message || 'Erro ao salvar paciente';
@@ -278,7 +371,9 @@ export default function Rotina() {
     try {
       await rotinaApi.deletar(id);
       toast.success('Paciente excluído com sucesso!');
-      loadData();
+      setTimeout(() => {
+        loadData();
+      }, 0);
     } catch (error) {
       const apiError = error as ApiError;
       const message = apiError.response?.data?.message || 'Erro ao excluir paciente';
@@ -293,17 +388,22 @@ export default function Rotina() {
   const exportarRelatorio = async (formato: 'csv' | 'excel' | 'pdf') => {
     try {
       const toastId = toast.loading(`Gerando relatório ${formato.toUpperCase()}...`);
-      
+
+      const filtrosExportacao = { ...filtros };
+      if (debouncedSearchTerm.trim()) {
+        filtrosExportacao.nome = debouncedSearchTerm.trim();
+      }
+
       let blob: Blob;
       switch (formato) {
         case 'csv':
-          blob = await relatorioApi.rotinaCSV(filtros);
+          blob = await relatorioApi.rotinaCSV(filtrosExportacao);
           break;
         case 'excel':
-          blob = await relatorioApi.rotinaCSV(filtros);
+          blob = await relatorioApi.rotinaCSV(filtrosExportacao);
           break;
         case 'pdf':
-          blob = await relatorioApi.rotinaCSV(filtros);
+          blob = await relatorioApi.rotinaCSV(filtrosExportacao);
           break;
         default:
           return;
@@ -319,7 +419,8 @@ export default function Rotina() {
       window.URL.revokeObjectURL(url);
 
       toast.success(`Relatório ${formato.toUpperCase()} gerado com sucesso!`, { id: toastId });
-    } catch {
+    } catch (error) {
+      console.error('❌ Erro ao exportar relatório:', error);
       toast.error('Erro ao gerar relatório');
     }
   };
@@ -373,6 +474,30 @@ export default function Rotina() {
             <Plus className="w-4 h-4" />
             Novo Paciente
           </button>
+        </div>
+      </div>
+
+      {/* Busca por nome - EM TEMPO REAL */}
+      <div className="card">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Digite para buscar por nome..."
+              className="input-field pl-9 pr-10"
+              value={searchTerm}
+              onChange={handleSearchChange}
+            />
+            {searchTerm && (
+              <button
+                onClick={limparBusca}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <XCircle className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -456,99 +581,105 @@ export default function Rotina() {
             <p className="text-sm">Clique em "Novo Paciente" para adicionar</p>
           </div>
         ) : (
-          <div className="table-container">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Nome</th>
-                  <th>Nº Amostra</th>
-                  <th>Ano</th>
-                  <th>PSF</th>
-                  <th>Localidade</th>
-                  <th>Tratado</th>
-                  <th>Data Revisão</th>
-                  <th className="text-right">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {pacientes.map((item) => {
-                  const dataRevisao = item.data_revisao;
+          <>
+            <div className="table-container">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Nome</th>
+                    <th>Nº Amostra</th>
+                    <th>Ano</th>
+                    <th>PSF</th>
+                    <th>Localidade</th>
+                    <th>Tratado</th>
+                    <th>Data Revisão</th>
+                    <th className="text-right">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pacientes.map((item) => {
+                    const dataRevisao = item.data_revisao;
 
-                  return (
-                    <tr key={item.id}>
-                      <td className="font-medium text-slate-800">{item.nome}</td>
-                      <td className="font-mono text-sm text-primary-600">
-                        {item.numero_amostra}
-                      </td>
-                      <td>{item.ano}</td>
-                      <td>{item.psf_nome || '-'}</td>
-                      <td>{item.localidade_nome || '-'}</td>
-                      <td>
-                        <span className={`badge ${item.entrega_medicamento === 'S' ? 'badge-success' : 'badge-warning'}`}>
-                          {item.entrega_medicamento === 'S' ? 'Sim' : 'Não'}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="flex items-center gap-2">
-                          {item.revisao === 'S' ? (
-                            // ✅ REVISÃO FEITA - Verde
-                            <span className="flex items-center gap-1 text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
-                              <CheckCircle className="w-4 h-4" />
-                              <span className="text-sm font-medium">Revisão feita</span>
-                            </span>
-                          ) : dataRevisao ? (
-                            // ⚠️ TEM DATA DE REVISÃO - Verificar se está atrasada
-                            (() => {
-                              const hoje = new Date();
-                              hoje.setHours(0, 0, 0, 0);
-                              const dataRev = new Date(dataRevisao);
-                              dataRev.setHours(0, 0, 0, 0);
-                              const estaAtrasada = dataRev < hoje;
-                              
-                              return estaAtrasada ? (
-                                // 🔴 REVISÃO ATRASADA - Vermelho
-                                <span className="flex items-center gap-1 text-red-600 bg-red-50 px-2 py-1 rounded-full font-bold">
-                                  <AlertTriangle className="w-4 h-4" />
-                                  <span>Atrasada! {new Date(dataRevisao).toLocaleDateString('pt-BR')}</span>
-                                </span>
-                              ) : (
-                                // 🟡 REVISÃO PENDENTE (no prazo) - Amarelo
-                                <span className="flex items-center gap-1 text-amber-600 bg-amber-50 px-2 py-1 rounded-full">
-                                  <Calendar className="w-4 h-4" />
-                                  <span className="text-sm font-medium">{new Date(dataRevisao).toLocaleDateString('pt-BR')}</span>
-                                </span>
-                              );
-                            })()
-                          ) : (
-                            // ➖ SEM TRATAMENTO - Cinza
-                            <span className="text-slate-400 text-sm">-</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <button
-                            onClick={() => openModal(item)}
-                            className="p-1.5 rounded-lg hover:bg-primary-50 text-primary-600 transition-colors"
-                            title="Editar"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(item.id, item.nome)}
-                            className="p-1.5 rounded-lg hover:bg-rose-50 text-rose-600 transition-colors"
-                            title="Excluir"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                    return (
+                      <tr key={item.id}>
+                        <td className="font-medium text-slate-800">{item.nome}</td>
+                        <td className="font-mono text-sm text-primary-600">
+                          {item.numero_amostra}
+                        </td>
+                        <td>{item.ano}</td>
+                        <td>{item.psf_nome || '-'}</td>
+                        <td>{item.localidade_nome || '-'}</td>
+                        <td>
+                          <span className={`badge ${item.entrega_medicamento === 'S' ? 'badge-success' : 'badge-warning'}`}>
+                            {item.entrega_medicamento === 'S' ? 'Sim' : 'Não'}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="flex items-center gap-2">
+                            {item.revisao === 'S' ? (
+                              <span className="flex items-center gap-1 text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
+                                <CheckCircle className="w-4 h-4" />
+                                <span className="text-sm font-medium">Revisão feita</span>
+                              </span>
+                            ) : dataRevisao ? (
+                              (() => {
+                                const hoje = new Date();
+                                hoje.setHours(0, 0, 0, 0);
+                                const dataRev = new Date(dataRevisao);
+                                dataRev.setHours(0, 0, 0, 0);
+                                const estaAtrasada = dataRev < hoje;
+
+                                return estaAtrasada ? (
+                                  <span className="flex items-center gap-1 text-red-600 bg-red-50 px-2 py-1 rounded-full font-bold">
+                                    <AlertTriangle className="w-4 h-4" />
+                                    <span>Atrasada! {new Date(dataRevisao).toLocaleDateString('pt-BR')}</span>
+                                  </span>
+                                ) : (
+                                  <span className="flex items-center gap-1 text-amber-600 bg-amber-50 px-2 py-1 rounded-full">
+                                    <Calendar className="w-4 h-4" />
+                                    <span className="text-sm font-medium">{new Date(dataRevisao).toLocaleDateString('pt-BR')}</span>
+                                  </span>
+                                );
+                              })()
+                            ) : (
+                              <span className="text-slate-400 text-sm">-</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              onClick={() => openModal(item)}
+                              className="p-1.5 rounded-lg hover:bg-primary-50 text-primary-600 transition-colors"
+                              title="Editar"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(item.id, item.nome)}
+                              className="p-1.5 rounded-lg hover:bg-rose-50 text-rose-600 transition-colors"
+                              title="Excluir"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Paginação */}
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+              totalItems={totalItems}
+              itemsPerPage={itemsPerPage}
+            />
+          </>
         )}
       </div>
 
@@ -730,21 +861,20 @@ export default function Rotina() {
                     value={formData.data_tratamento}
                     onChange={(e) => {
                       const value = e.target.value;
-                      
-                      // Validar data futura
+
                       if (value && isDataFutura(value)) {
                         toast.error('Não é possível selecionar uma data de tratamento no futuro');
                         return;
                       }
-                      
+
                       setFormData({ ...formData, data_tratamento: value });
-                      
+
                       if (value) {
                         const pendentes = [];
                         if (formData.entrega_medicamento !== 'S') pendentes.push('Medicamento');
                         if (formData.entrega_documento !== 'S') pendentes.push('Documento');
                         if (formData.entrega_resultado !== 'S') pendentes.push('Resultado');
-                        
+
                         if (pendentes.length > 0) {
                           toast.error(`Para registrar tratamento, é necessário marcar "Sim" em: ${pendentes.join(', ')}`);
                         } else {

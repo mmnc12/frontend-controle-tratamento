@@ -1,15 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Menu, 
   X, 
   LogOut, 
-  User, 
   ChevronDown,
   Bell,
-  Settings
+  Settings,
+  AlertTriangle,
+  CheckCircle
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import { redeBasicaApi, rotinaApi } from '../../api';
+import type { RedeBasica, Rotina } from '../../types';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -21,24 +24,63 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
   const location = useLocation();
   const { user, logout } = useAuth();
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [pacientesRede, setPacientesRede] = useState<RedeBasica[]>([]);
+  const [pacientesRotina, setPacientesRotina] = useState<Rotina[]>([]);
+  const isFirstRender = useRef(true);
+
+  // ============================================
+  // CARREGAR DADOS PARA NOTIFICAÇÕES
+  // ============================================
+
+  const loadData = useCallback(async () => {
+    try {
+      const [redeResponse, rotinaResponse] = await Promise.all([
+        redeBasicaApi.listar({}, 1, 1000),
+        rotinaApi.listar({}, 1, 1000)
+      ]);
+      setPacientesRede(redeResponse.data);
+      setPacientesRotina(rotinaResponse.data);
+    } catch {
+      // Silencioso - não mostra toast para não incomodar
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      loadData();
+    }
+    // Recarregar a cada 5 minutos
+    const interval = setInterval(loadData, 300000);
+    return () => clearInterval(interval);
+  }, [loadData]);
+
+  // ============================================
+  // CALCULAR REVISÕES ATRASADAS
+  // ============================================
+
+  const todosPacientes = [...pacientesRede, ...pacientesRotina];
+  
+  const revisoesAtrasadas = todosPacientes.filter(p => {
+    if (p.revisao === 'S') return false;
+    if (!p.data_revisao) return false;
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    const dataRevisao = new Date(p.data_revisao);
+    dataRevisao.setHours(0, 0, 0, 0);
+    return dataRevisao < hoje;
+  });
+
+  // ============================================
+  // HANDLERS
+  // ============================================
 
   const handleLogout = () => {
     logout();
     navigate('/');
   };
 
-  // Fechar dropdown ao clicar fora
-  useEffect(() => {
-    const handleClickOutside = () => {
-      if (showDropdown) {
-        setShowDropdown(false);
-      }
-    };
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, [showDropdown]);
-
-  // Obter nome da página atual
   const getPageTitle = () => {
     const path = location.pathname;
     const titles: Record<string, string> = {
@@ -49,9 +91,24 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
       '/rotina': 'Rotina',
       '/relatorios': 'Relatórios',
       '/configuracoes': 'Configurações',
+      '/usuarios': 'Usuários',
     };
     return titles[path] || 'Sistema';
   };
+
+  // Fechar dropdowns ao clicar fora
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setShowDropdown(false);
+      setShowNotifications(false);
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
+
+  // ============================================
+  // RENDER
+  // ============================================
 
   return (
     <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/50 sticky top-0 z-50">
@@ -76,11 +133,91 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
 
         {/* Lado direito */}
         <div className="flex items-center gap-3">
-          {/* Notificações */}
-          <button className="p-2 rounded-lg hover:bg-slate-100 transition-colors relative">
-            <Bell className="w-5 h-5 text-slate-500" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
-          </button>
+          {/* Notificações - Revisões Atrasadas */}
+          <div className="relative">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowNotifications(!showNotifications);
+              }}
+              className="p-2 rounded-lg hover:bg-slate-100 transition-colors relative"
+            >
+              <Bell className="w-5 h-5 text-slate-500" />
+              {revisoesAtrasadas.length > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white">
+                  {revisoesAtrasadas.length}
+                </span>
+              )}
+            </button>
+
+            {/* Dropdown de notificações */}
+            {showNotifications && (
+              <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-slate-200/50 py-2 z-50 max-h-96 overflow-y-auto">
+                <div className="px-4 py-2 border-b border-slate-100 flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-slate-800">
+                    Revisões Atrasadas
+                  </h3>
+                  <span className="text-xs text-red-500 font-medium">
+                    {revisoesAtrasadas.length} paciente(s)
+                  </span>
+                </div>
+
+                {revisoesAtrasadas.length > 0 ? (
+                  <div>
+                    {revisoesAtrasadas.slice(0, 10).map((p, index) => (
+                      <button
+                        key={index}
+                        onClick={() => {
+                          setShowNotifications(false);
+                          const origem = 'psf_nome' in p ? 'rede-basica' : 'rotina';
+                          navigate(`/${origem}`);
+                        }}
+                        className="w-full flex items-start gap-3 px-4 py-3 hover:bg-slate-50 transition-colors text-left border-b border-slate-50 last:border-0"
+                      >
+                        <div className="p-2 rounded-full bg-red-50 text-red-600 flex-shrink-0">
+                          <AlertTriangle className="w-4 h-4" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-slate-800 truncate">{p.nome}</p>
+                          <p className="text-xs text-slate-500">
+                            Revisão: {p.data_revisao ? new Date(p.data_revisao).toLocaleDateString('pt-BR') : '-'}
+                          </p>
+                          <p className="text-xs text-red-500 font-medium">
+                            Atrasada! Deveria ter sido feita até {p.data_revisao ? new Date(p.data_revisao).toLocaleDateString('pt-BR') : '-'}
+                          </p>
+                        </div>
+                      </button>
+                    ))}
+                    {revisoesAtrasadas.length > 10 && (
+                      <div className="px-4 py-2 text-center text-xs text-slate-500 border-t border-slate-100">
+                        + {revisoesAtrasadas.length - 10} pacientes atrasados
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="px-4 py-6 text-center">
+                    <CheckCircle className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
+                    <p className="text-sm text-slate-500">Nenhuma revisão atrasada</p>
+                    <p className="text-xs text-slate-400">Todas as revisões estão em dia</p>
+                  </div>
+                )}
+
+                {revisoesAtrasadas.length > 0 && (
+                  <div className="px-4 py-2 border-t border-slate-100">
+                    <button
+                      onClick={() => {
+                        setShowNotifications(false);
+                        navigate('/rotina');
+                      }}
+                      className="w-full text-center text-sm text-primary-600 hover:text-primary-700 font-medium"
+                    >
+                      Ver todos os pacientes
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Perfil do usuário */}
           <div className="relative">
@@ -100,7 +237,7 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
               <ChevronDown className="w-4 h-4 text-slate-400" />
             </button>
 
-            {/* Dropdown */}
+            {/* Dropdown do perfil */}
             {showDropdown && (
               <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-slate-200/50 py-1 z-50 overflow-hidden">
                 <div className="px-4 py-3 border-b border-slate-100">
@@ -111,16 +248,6 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
                      user?.perfil === 'usuario' ? 'Usuário' : 'Visualizador'}
                   </span>
                 </div>
-                <button
-                  onClick={() => {
-                    setShowDropdown(false);
-                    navigate('/dashboard');
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
-                >
-                  <User className="w-4 h-4" />
-                  Meu Perfil
-                </button>
                 <button
                   onClick={() => {
                     setShowDropdown(false);
