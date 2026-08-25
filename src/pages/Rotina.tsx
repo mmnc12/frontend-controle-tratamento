@@ -604,7 +604,7 @@ export default function Rotina() {
                   />
                 </div>
                 <div>
-                  <label className="input-label">Controle (SISPNCD)</label>
+                  <label className="input-label">Controle (SISPCE)</label>
                   <input
                     type="text"
                     className="input-field"

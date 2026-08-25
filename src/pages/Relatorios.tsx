@@ -1,0 +1,332 @@
+import { useState, useEffect, useCallback, useRef } from 'react';
+import {
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    ResponsiveContainer,
+    PieChart,
+    Pie,
+    Cell,
+    LineChart,
+    Line
+} from 'recharts';
+import {
+    Users,
+    CheckCircle,
+    Clock,
+    FileText
+} from 'lucide-react';
+import { redeBasicaApi, rotinaApi, localidadeApi, psfApi } from '../api';
+import type { RedeBasica, Rotina, Localidade, PSF } from '../types';
+import toast from 'react-hot-toast';
+
+// Cores para os gráficos
+const COLORS = ['#0ea5e9', '#22c55e', '#eab308', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
+
+export default function Relatorios() {
+    const [loading, setLoading] = useState(true);
+    const [pacientesRede, setPacientesRede] = useState<RedeBasica[]>([]);
+    const [pacientesRotina, setPacientesRotina] = useState<Rotina[]>([]);
+    const [localidades, setLocalidades] = useState<Localidade[]>([]);
+    const [psfs, setPsfs] = useState<PSF[]>([]);
+    const isFirstRender = useRef(true);
+
+    // ============================================
+    // CARREGAR DADOS
+    // ============================================
+
+    const loadData = useCallback(async () => {
+        try {
+            setLoading(true);
+            const [rede, rotina, locais, psfsData] = await Promise.all([
+                redeBasicaApi.listar(),
+                rotinaApi.listar(),
+                localidadeApi.listar(),
+                psfApi.listar()
+            ]);
+            setPacientesRede(rede);
+            setPacientesRotina(rotina);
+            setLocalidades(locais);
+            setPsfs(psfsData);
+        } catch {
+            toast.error('Erro ao carregar dados');
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    // Carregar dados na primeira renderização
+    useEffect(() => {
+        if (isFirstRender.current) {
+            isFirstRender.current = false;
+            loadData();
+        }
+    }, [loadData]);
+
+    // ============================================
+    // CÁLCULO DE ESTATÍSTICAS
+    // ============================================
+
+    const todosPacientes = [...pacientesRede, ...pacientesRotina];
+    const totalPacientes = todosPacientes.length;
+    const tratados = todosPacientes.filter(p => p.entrega_medicamento === 'S').length;
+    const pendentes = todosPacientes.filter(p => p.entrega_medicamento === 'N').length;
+    const revisoesFeitas = todosPacientes.filter(p => p.revisao === 'S').length;
+
+    // Pacientes por localidade
+    const pacientesPorLocalidade = localidades.map(local => {
+        const count = todosPacientes.filter(p => p.localidade_id === local.id).length;
+        return {
+            nome: local.nome,
+            quantidade: count
+        };
+    }).filter(item => item.quantidade > 0).sort((a, b) => b.quantidade - a.quantidade);
+
+    // Pacientes por PSF
+    const pacientesPorPSF = psfs.map(psf => {
+        const count = todosPacientes.filter(p => p.psf_id === psf.id).length;
+        return {
+            nome: psf.nome,
+            quantidade: count
+        };
+    }).filter(item => item.quantidade > 0).sort((a, b) => b.quantidade - a.quantidade);
+
+    // Evolução mensal (últimos 6 meses)
+    const evolucaoMensal = () => {
+        const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+        const mesAtual = new Date().getMonth();
+        const anoAtual = new Date().getFullYear();
+        const ultimosMeses = [];
+
+        for (let i = 5; i >= 0; i--) {
+            const mes = (mesAtual - i + 12) % 12;
+            const ano = mesAtual - i < 0 ? anoAtual - 1 : anoAtual;
+            ultimosMeses.push({ mes: meses[mes], ano, index: mes });
+        }
+
+        return ultimosMeses.map(({ mes, ano, index }) => {
+            const count = todosPacientes.filter(p => {
+                if (!p.data_tratamento) return false;
+                const data = new Date(p.data_tratamento);
+                return data.getMonth() === index && data.getFullYear() === ano;
+            }).length;
+            return { mes, quantidade: count };
+        });
+    };
+
+    const dadosEvolucao = evolucaoMensal();
+
+    // Últimos pacientes cadastrados (10 mais recentes)
+    const ultimosPacientes = [...todosPacientes]
+        .sort((a, b) => (b.id || 0) - (a.id || 0))
+        .slice(0, 10);
+
+    // ============================================
+    // STATS CARDS
+    // ============================================
+
+    const stats = [
+        {
+            titulo: 'Total de Pacientes',
+            valor: totalPacientes,
+            icone: Users,
+            cor: 'from-primary-500 to-primary-600',
+            bgColor: 'bg-primary-50'
+        },
+        {
+            titulo: 'Pacientes Tratados',
+            valor: tratados,
+            icone: CheckCircle,
+            cor: 'from-emerald-500 to-emerald-600',
+            bgColor: 'bg-emerald-50'
+        },
+        {
+            titulo: 'Aguardando Tratamento',
+            valor: pendentes,
+            icone: Clock,
+            cor: 'from-amber-500 to-amber-600',
+            bgColor: 'bg-amber-50'
+        },
+        {
+            titulo: 'Revisões Realizadas',
+            valor: revisoesFeitas,
+            icone: FileText,
+            cor: 'from-violet-500 to-violet-600',
+            bgColor: 'bg-violet-50'
+        }
+    ];
+
+    // ============================================
+    // LABEL PERSONALIZADO PARA O PIE CHART
+    // ============================================
+
+    const renderPieLabel = ({ name, percent }: { name?: string; percent?: number }) => {
+        if (!name || !percent) return '';
+        return `${name}: ${(percent * 100).toFixed(0)}%`;
+    };
+
+    // ============================================
+    // RENDER
+    // ============================================
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-96">
+                <div className="w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-6">
+            {/* Header */}
+            <div>
+                <h1 className="text-2xl font-bold text-slate-800">Relatórios</h1>
+                <p className="text-slate-500 text-sm">Visão consolidada dos dados do sistema</p>
+            </div>
+
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {stats.map((stat, index) => (
+                    <div key={index} className="bg-white rounded-2xl shadow-sm shadow-slate-200/50 border border-slate-200/50 p-5 hover:shadow-md transition-all duration-300 hover:-translate-y-0.5">
+                        <div className="flex items-start justify-between">
+                            <div>
+                                <p className="text-sm text-slate-500">{stat.titulo}</p>
+                                <p className="text-2xl font-bold text-slate-800 mt-1">{stat.valor}</p>
+                            </div>
+                            <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${stat.cor} shadow-lg flex items-center justify-center flex-shrink-0 ml-3`}>
+                                <stat.icone className="w-6 h-6 text-white" />
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* Gráficos */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Pacientes por Localidade */}
+                <div className="bg-white rounded-2xl shadow-sm shadow-slate-200/50 border border-slate-200/50 p-5">
+                    <h3 className="text-lg font-semibold text-slate-800 mb-4">Pacientes por Localidade</h3>
+                    {pacientesPorLocalidade.length > 0 ? (
+                        <ResponsiveContainer width="100%" height={300}>
+                            <BarChart data={pacientesPorLocalidade}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                                <XAxis dataKey="nome" tick={{ fontSize: 12 }} interval={0} angle={-45} textAnchor="end" height={80} />
+                                <YAxis allowDecimals={false} />
+                                <Tooltip
+                                    formatter={(value) => [`${value} pacientes`, 'Quantidade']}
+                                    contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                                />
+                                <Bar dataKey="quantidade" fill="#0ea5e9" radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    ) : (
+                        <p className="text-slate-400 text-center py-12">Nenhum dado disponível</p>
+                    )}
+                </div>
+
+                {/* Pacientes por PSF */}
+                <div className="bg-white rounded-2xl shadow-sm shadow-slate-200/50 border border-slate-200/50 p-5">
+                    <h3 className="text-lg font-semibold text-slate-800 mb-4">Pacientes por PSF</h3>
+                    {pacientesPorPSF.length > 0 ? (
+                        <ResponsiveContainer width="100%" height={300}>
+                            <PieChart>
+                                <Pie
+                                    data={pacientesPorPSF}
+                                    dataKey="quantidade"
+                                    nameKey="nome"
+                                    cx="50%"
+                                    cy="50%"
+                                    outerRadius={100}
+                                    label={renderPieLabel}
+                                    labelLine={true}
+                                >
+                                    {pacientesPorPSF.map((_entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                    ))}
+                                </Pie>
+                                <Tooltip
+                                    formatter={(value) => [`${value} pacientes`, 'Quantidade']}
+                                    contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                                />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    ) : (
+                        <p className="text-slate-400 text-center py-12">Nenhum dado disponível</p>
+                    )}
+                </div>
+            </div>
+
+            {/* Evolução Mensal */}
+            <div className="bg-white rounded-2xl shadow-sm shadow-slate-200/50 border border-slate-200/50 p-5">
+                <h3 className="text-lg font-semibold text-slate-800 mb-4">Evolução de Tratamentos por Mês</h3>
+                {dadosEvolucao.some(d => d.quantidade > 0) ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                        <LineChart data={dadosEvolucao}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                            <XAxis dataKey="mes" />
+                            <YAxis allowDecimals={false} />
+                            <Tooltip
+                                formatter={(value) => [`${value} pacientes`, 'Quantidade']}
+                                contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                            />
+                            <Line type="monotone" dataKey="quantidade" stroke="#0ea5e9" strokeWidth={2} dot={{ fill: '#0ea5e9', strokeWidth: 2 }} />
+                        </LineChart>
+                    </ResponsiveContainer>
+                ) : (
+                    <p className="text-slate-400 text-center py-12">Nenhum dado disponível</p>
+                )}
+            </div>
+
+            {/* Últimos Pacientes */}
+            <div className="bg-white rounded-2xl shadow-sm shadow-slate-200/50 border border-slate-200/50 p-5">
+                <h3 className="text-lg font-semibold text-slate-800 mb-4">Últimos Pacientes Cadastrados</h3>
+                {ultimosPacientes.length > 0 ? (
+                    <div className="overflow-x-auto">
+                        <table className="table">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Origem</th>
+                                    <th>PSF</th>
+                                    <th>Localidade</th>
+                                    <th>Tratado</th>
+                                    <th>Revisão</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {ultimosPacientes.map((p) => (
+                                    <tr key={p.id}>
+                                        <td className="font-medium text-slate-800">{p.nome}</td>
+                                        <td>
+                                            <span className={`badge ${'numero_amostra' in p ? 'badge-neutral' : 'badge-info'}`}>
+                                                {'numero_amostra' in p ? 'Rotina' : 'Rede Básica'}
+                                            </span>
+                                        </td>
+                                        <td>{p.psf_nome || '-'}</td>
+                                        <td>{p.localidade_nome || '-'}</td>
+                                        <td>
+                                            <span className={`badge ${p.entrega_medicamento === 'S' ? 'badge-success' : 'badge-warning'}`}>
+                                                {p.entrega_medicamento === 'S' ? 'Sim' : 'Não'}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span className={`badge ${p.revisao === 'S' ? 'badge-success' : 'badge-neutral'}`}>
+                                                {p.revisao === 'S' ? 'Feita' : 'Pendente'}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                ) : (
+                    <p className="text-slate-400 text-center py-8">Nenhum paciente cadastrado</p>
+                )}
+            </div>
+        </div>
+    );
+}
