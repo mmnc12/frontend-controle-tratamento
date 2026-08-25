@@ -8,7 +8,8 @@ import {
   FileText,
   Settings,
   LogOut,
-  Activity
+  Activity,
+  UserCog
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -18,7 +19,7 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
 
   const menuItems = [
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -29,6 +30,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     { path: '/relatorios', icon: FileText, label: 'Relatórios' },
     { path: '/configuracoes', icon: Settings, label: 'Configurações' },
   ];
+
+  // Adicionar Usuários apenas se for admin
+  if (user?.perfil === 'admin') {
+    menuItems.splice(6, 0, { path: '/usuarios', icon: UserCog, label: 'Usuários' });
+  }
 
   const handleLogout = () => {
     logout();

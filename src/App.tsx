@@ -12,6 +12,8 @@ import PSFs from './pages/PSFs';
 import RedeBasica from './pages/RedeBasica';
 import Rotina from './pages/Rotina';
 import Relatorios from './pages/Relatorios';
+import Configuracoes from './pages/Configuracoes';
+import Usuarios from './pages/Usuarios'; // <-- NOVO
 
 // ============================================
 // COMPONENTE PARA ROTAS PRIVADAS
@@ -97,6 +99,26 @@ function AppRoutes() {
           <PrivateRoute>
             <Layout>
               <Relatorios />
+            </Layout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/configuracoes"
+        element={
+          <PrivateRoute>
+            <Layout>
+              <Configuracoes />
+            </Layout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/usuarios"
+        element={
+          <PrivateRoute>
+            <Layout>
+              <Usuarios />
             </Layout>
           </PrivateRoute>
         }
