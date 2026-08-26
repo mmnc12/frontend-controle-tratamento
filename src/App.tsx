@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './contexts/AuthContext';
 import { useAuth } from './hooks/useAuth';
@@ -13,7 +14,34 @@ import RedeBasica from './pages/RedeBasica';
 import Rotina from './pages/Rotina';
 import Relatorios from './pages/Relatorios';
 import Configuracoes from './pages/Configuracoes';
-import Usuarios from './pages/Usuarios'; // <-- NOVO
+import Usuarios from './pages/Usuarios';
+
+// ============================================
+// COMPONENTE PARA ATUALIZAR TÍTULO
+// ============================================
+
+const PageTitle = () => {
+  const location = useLocation();
+  
+  useEffect(() => {
+    const titles: Record<string, string> = {
+      '/': 'Login',
+      '/dashboard': 'Dashboard - Controle de Tratamento',
+      '/localidades': 'Localidades - Controle de Tratamento',
+      '/psf': 'PSFs - Controle de Tratamento',
+      '/rede-basica': 'Rede Básica - Controle de Tratamento',
+      '/rotina': 'Rotina - Controle de Tratamento',
+      '/relatorios': 'Relatórios - Controle de Tratamento',
+      '/configuracoes': 'Configurações - Controle de Tratamento',
+      '/usuarios': 'Usuários - Controle de Tratamento',
+    };
+    
+    const title = titles[location.pathname] || 'Controle de Tratamento';
+    document.title = title;
+  }, [location]);
+  
+  return null;
+};
 
 // ============================================
 // COMPONENTE PARA ROTAS PRIVADAS
@@ -135,6 +163,7 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <PageTitle />
         <Toaster
           position="top-right"
           toastOptions={{
