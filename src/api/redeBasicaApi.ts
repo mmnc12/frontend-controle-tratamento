@@ -42,8 +42,6 @@ export const redeBasicaApi = {
         params.append('page', String(page));
         params.append('limit', String(limit));
 
-        console.log('🔍 URL Rede Básica:', `/rede-basica?${params.toString()}`);
-
         const response = await api.get<PaginatedResponse<RedeBasica>>(
             `/rede-basica?${params.toString()}`
         );

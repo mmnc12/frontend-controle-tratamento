@@ -82,8 +82,6 @@ export default function Rotina() {
   const loadData = useCallback(async (searchTermParam?: string) => {
     try {
       setLoading(true);
-      console.log('📊 Carregando página:', currentPage, 'com limite:', itemsPerPage);
-      console.log('📊 Buscando por:', searchTermParam || '');
 
       const filtrosComBusca = { ...filtros };
       if (searchTermParam && searchTermParam.trim()) {
@@ -96,7 +94,6 @@ export default function Rotina() {
         psfApi.listar()
       ]);
 
-      console.log('📊 Resposta da API:', pacientesResponse);
 
       setPacientes(pacientesResponse.data || []);
       setTotalPages(pacientesResponse.pagination?.totalPages || 1);
@@ -190,7 +187,6 @@ export default function Rotina() {
   // ============================================
 
   const handlePageChange = (page: number) => {
-    console.log('📄 Mudando para página:', page);
     setCurrentPage(page);
     setTimeout(() => {
       loadData();

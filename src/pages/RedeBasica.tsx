@@ -79,23 +79,17 @@ export default function RedeBasica() {
   const loadData = useCallback(async (searchTermParam?: string) => {
     try {
       setLoading(true);
-      console.log('📊 Carregando página Rede Básica:', currentPage, 'com limite:', itemsPerPage);
-      console.log('📊 Buscando por:', searchTermParam || '');
 
       const filtrosComBusca = { ...filtros };
       if (searchTermParam && searchTermParam.trim()) {
         filtrosComBusca.nome = searchTermParam.trim();
       }
 
-      console.log('📊 Filtros aplicados:', filtrosComBusca);
-
       const [pacientesResponse, localidadesData, psfsData] = await Promise.all([
         redeBasicaApi.listar(filtrosComBusca, currentPage, itemsPerPage),
         localidadeApi.listar(),
         psfApi.listar()
       ]);
-
-      console.log('📊 Resposta da API:', pacientesResponse);
 
       if (pacientesResponse && pacientesResponse.data) {
         setPacientes(pacientesResponse.data);
@@ -188,7 +182,6 @@ export default function RedeBasica() {
   // ============================================
 
   const handlePageChange = (page: number) => {
-    console.log('📄 Mudando para página:', page);
     setCurrentPage(page);
     setTimeout(() => {
       loadData();

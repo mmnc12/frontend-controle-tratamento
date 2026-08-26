@@ -17,10 +17,7 @@ export default function Pagination({
 }: PaginationProps) {
   if (totalPages <= 1) return null;
 
-  console.log('🔵 Pagination renderizado - currentPage:', currentPage, 'totalPages:', totalPages);
-
   const handlePageChange = (page: number) => {
-    console.log('🟢 Clicou na página:', page);
     onPageChange(page);
   };
 
@@ -55,7 +52,6 @@ export default function Pagination({
       <div className="flex items-center gap-1">
         <button
           onClick={() => {
-            console.log('⬅️ Clicou em Anterior');
             handlePageChange(currentPage - 1);
           }}
           disabled={currentPage === 1}
@@ -68,7 +64,6 @@ export default function Pagination({
           <button
             key={page}
             onClick={() => {
-              console.log(`🔢 Clicou no número: ${page}`);
               handlePageChange(page);
             }}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
@@ -83,7 +78,6 @@ export default function Pagination({
 
         <button
           onClick={() => {
-            console.log('➡️ Clicou em Próximo');
             handlePageChange(currentPage + 1);
           }}
           disabled={currentPage === totalPages}

@@ -48,8 +48,6 @@ export const rotinaApi = {
     params.append('page', String(page));
     params.append('limit', String(limit));
 
-    console.log('🔍 URL da requisição:', `/rotina?${params.toString()}`);
-
     const response = await api.get<PaginatedResponse<Rotina>>(
       `/rotina?${params.toString()}`
     );
