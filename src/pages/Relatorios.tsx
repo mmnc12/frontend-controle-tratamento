@@ -38,17 +38,22 @@ export default function Relatorios() {
     // CARREGAR DADOS
     // ============================================
 
+    // src/pages/Relatorios.tsx
+    // No loadData, altere:
+
     const loadData = useCallback(async () => {
         try {
             setLoading(true);
-            const [rede, rotina, locais, psfsData] = await Promise.all([
-                redeBasicaApi.listar(),
-                rotinaApi.listar(),
+            const [redeResponse, rotinaResponse, locais, psfsData] = await Promise.all([
+                redeBasicaApi.listar({}, 1, 1000),  // Retorna PaginatedResponse
+                rotinaApi.listar({}, 1, 1000),      // Retorna PaginatedResponse
                 localidadeApi.listar(),
                 psfApi.listar()
             ]);
-            setPacientesRede(rede);
-            setPacientesRotina(rotina);
+
+            // Extrair os dados da resposta paginada
+            setPacientesRede(redeResponse.data);
+            setPacientesRotina(rotinaResponse.data);
             setLocalidades(locais);
             setPsfs(psfsData);
         } catch {
