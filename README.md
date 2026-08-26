@@ -1,75 +1,201 @@
-# React + TypeScript + Vite
+## 📄 **README para o Frontend**
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+### **`frontend-controle-tratamento/README.md`**
 
-Currently, two official plugins are available:
+```markdown
+# 🖥️ Frontend - Sistema de Controle de Tratamento
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Aplicação web moderna para gerenciamento de pacientes com esquistossomose, desenvolvida com React + TypeScript + Tailwind CSS.
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 📋 Índice
 
-## Expanding the ESLint configuration
+- [Tecnologias](#tecnologias)
+- [Funcionalidades](#funcionalidades)
+- [Como Rodar](#como-rodar)
+- [Estrutura do Projeto](#estrutura-do-projeto)
+- [Screenshots](#screenshots)
+- [Deploy](#deploy)
+- [Licença](#licença)
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+---
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## 🚀 Tecnologias
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+| Tecnologia | Versão | Descrição |
+|------------|--------|-----------|
+| React | v18 | Biblioteca UI |
+| TypeScript | v5 | Superset tipado do JavaScript |
+| Tailwind CSS | v3 | Framework CSS |
+| Vite | v5 | Build tool |
+| React Router DOM | v6 | Navegação |
+| Axios | - | HTTP Client |
+| Recharts | - | Gráficos |
+| React Hook Form | - | Formulários |
+| Lucide React | - | Ícones |
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+---
 
-```
+## ✨ Funcionalidades
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### 🔐 Autenticação
+- Login com JWT
+- Proteção de rotas
+- Perfis: Admin, Usuário, Visualizador
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### 📊 Dashboard
+- Estatísticas em tempo real
+- Cards com indicadores
+- Notificações de revisões atrasadas
+- Últimos pacientes cadastrados
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 👥 Gestão de Usuários (Admin)
+- Listagem com busca
+- Criação, edição e exclusão
+- Controle de perfis e status
 
-```
+### 📍 Localidades
+- CRUD completo
+- Busca por nome/código
+
+### 🏥 PSFs
+- CRUD completo
+- Busca por nome
+
+### 🩺 Rede Básica
+- CRUD completo
+- Filtros avançados
+- Busca em tempo real (debounce)
+- Paginação
+- Exportação (CSV, Excel, PDF)
+
+### 🔬 Rotina
+- CRUD completo
+- Filtros avançados
+- Busca em tempo real (debounce)
+- Paginação
+
+### 📈 Relatórios
+- Gráficos interativos
+- Estatísticas consolidadas
+
+### ⚙️ Configurações
+- Edição de perfil
+- Alteração de senha
+
+### 🔔 Notificações
+- Revisões atrasadas
+- Badge no sininho
+
+---
+
+## 🛠️ Como Rodar
+
+### Pré-requisitos
+
+- Node.js (v18+)
+- npm ou yarn
+
+### Passo a passo
+
+```bash
+# 1. Clonar o repositório
+git clone https://github.com/seu-usuario/frontend-controle-tratamento.git
+cd frontend-controle-tratamento
+
+# 2. Instalar dependências
+npm install
+
+# 3. Configurar variáveis de ambiente
+cp .env.example .env
+# Edite o .env se necessário
+
+# 4. Rodar em desenvolvimento
+npm run dev
+
+# 5. Build para produção
+npm run build
+npm run preview
+Variáveis de Ambiente
+env
+VITE_API_URL=http://localhost:3000/api
+📁 Estrutura do Projeto
+text
+frontend/
+├── src/
+│   ├── api/
+│   │   ├── axiosConfig.ts      # Configuração Axios
+│   │   ├── authApi.ts
+│   │   ├── localidadeApi.ts
+│   │   ├── psfApi.ts
+│   │   ├── redeBasicaApi.ts
+│   │   ├── rotinaApi.ts
+│   │   └── relatorioApi.ts
+│   ├── components/
+│   │   ├── layout/
+│   │   │   ├── Header.tsx
+│   │   │   ├── Sidebar.tsx
+│   │   │   └── Layout.tsx
+│   │   ├── ui/
+│   │   │   └── Pagination.tsx
+│   │   └── tables/
+│   ├── contexts/
+│   │   └── AuthContext.tsx
+│   ├── hooks/
+│   │   └── useAuth.ts
+│   ├── pages/
+│   │   ├── Login.tsx
+│   │   ├── Dashboard.tsx
+│   │   ├── Localidades.tsx
+│   │   ├── PSFs.tsx
+│   │   ├── RedeBasica.tsx
+│   │   ├── Rotina.tsx
+│   │   ├── Relatorios.tsx
+│   │   ├── Configuracoes.tsx
+│   │   └── Usuarios.tsx
+│   ├── types/
+│   │   └── index.ts
+│   ├── utils/
+│   ├── App.tsx
+│   └── main.tsx
+├── .env
+├── package.json
+├── tailwind.config.js
+├── tsconfig.json
+└── vite.config.ts
+📸 Screenshots
+Dashboard
+https://via.placeholder.com/800x400?text=Dashboard
+
+Login
+https://via.placeholder.com/800x400?text=Login
+
+Rede Básica
+https://via.placeholder.com/800x400?text=Rede+Basica
+
+Relatórios
+https://via.placeholder.com/800x400?text=Relatorios
+
+🚀 Deploy
+Vercel (Recomendado)
+bash
+# Instalar Vercel CLI
+npm install -g vercel
+
+# Deploy
+vercel
+Netlify
+bash
+# Build
+npm run build
+
+# Upload da pasta dist para o Netlify
+📄 Licença
+MIT
+
+📞 Contato
+Autor: Manoel Mecias do Nascimento
+
+Email: mmnc12@gmail.com
+
