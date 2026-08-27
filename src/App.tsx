@@ -16,6 +16,8 @@ import Relatorios from './pages/Relatorios';
 import Configuracoes from './pages/Configuracoes';
 import Usuarios from './pages/Usuarios';
 
+import TesteDownload from './pages/TesteDownload';
+
 // ============================================
 // COMPONENTE PARA ATUALIZAR TÍTULO
 // ============================================
@@ -151,6 +153,7 @@ function AppRoutes() {
           </PrivateRoute>
         }
       />
+      <Route path="/teste" element={<TesteDownload />} />
     </Routes>
   );
 }
