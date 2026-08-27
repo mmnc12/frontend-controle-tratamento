@@ -5,7 +5,6 @@ import { AuthProvider } from './contexts/AuthContext';
 import { useAuth } from './hooks/useAuth';
 import { Layout } from './components/layout';
 import './index.css';
-import './index.css?inline';
 
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
