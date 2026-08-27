@@ -111,15 +111,37 @@ export default function Relatorios() {
     };
 
     const handleDownloadPDF = async () => {
+        console.log('🔄 1. Iniciando download do PDF...');
         setDownloading(prev => ({ ...prev, pdf: true }));
+
         try {
+            console.log('🔄 2. Chamando API...');
             const data = await relatorioApi.redeBasicaPDF({});
+
+            console.log('🔄 3. Resposta recebida:', data);
+            console.log('🔄 4. Tipo do dado:', typeof data);
+            console.log('🔄 5. É Blob?', data instanceof Blob);
+            console.log('🔄 6. Tamanho (bytes):', data.size);
+            console.log('🔄 7. Tipo MIME:', data.type);
+
+            if (!data || data.size === 0) {
+                console.error('❌ 8. PDF vazio ou não gerado!');
+                throw new Error('PDF vazio ou não gerado');
+            }
+
+            console.log('🔄 9. Chamando downloadPDF...');
             downloadPDF(data, `relatorio-rede-basica-${new Date().toISOString().split('T')[0]}`);
+            console.log('✅ 10. downloadPDF chamado com sucesso!');
             toast.success('PDF baixado com sucesso!');
         } catch (error) {
-            console.error('Erro:', error);
+            console.error('❌ Erro detalhado:', error);
+            if (error instanceof Error) {
+                console.error('❌ Mensagem:', error.message);
+                console.error('❌ Stack:', error.stack);
+            }
             toast.error('Erro ao baixar PDF');
         } finally {
+            console.log('🔄 11. Finalizando...');
             setDownloading(prev => ({ ...prev, pdf: false }));
         }
     };
