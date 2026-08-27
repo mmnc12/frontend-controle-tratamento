@@ -22,7 +22,7 @@ import {
     FileText,
     Download,
     FileSpreadsheet,
-    File as FilePdf  // Renomeado para evitar conflito com File nativo
+    File as FilePdf
 } from 'lucide-react';
 import { redeBasicaApi, rotinaApi, localidadeApi, psfApi } from '../api';
 import { relatorioApi } from '../api/relatorioApi';
@@ -30,7 +30,6 @@ import { downloadCSV, downloadExcel, downloadPDF } from '../utils/downloadUtils'
 import type { RedeBasica, Rotina, Localidade, PSF } from '../types';
 import toast from 'react-hot-toast';
 
-// Cores para os gráficos
 const COLORS = ['#0ea5e9', '#22c55e', '#eab308', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
 export default function Relatorios() {
@@ -45,10 +44,6 @@ export default function Relatorios() {
     const [localidades, setLocalidades] = useState<Localidade[]>([]);
     const [psfs, setPsfs] = useState<PSF[]>([]);
     const isFirstRender = useRef(true);
-
-    // ============================================
-    // CARREGAR DADOS
-    // ============================================
 
     const loadData = useCallback(async () => {
         try {
@@ -79,17 +74,19 @@ export default function Relatorios() {
     }, [loadData]);
 
     // ============================================
-    // FUNÇÕES DE DOWNLOAD
+    // FUNÇÕES DE DOWNLOAD (VERSÃO SIMPLIFICADA)
     // ============================================
 
     const handleDownloadCSV = async () => {
+        console.log('🔄 Download CSV iniciado');
         setDownloading(prev => ({ ...prev, csv: true }));
         try {
             const data = await relatorioApi.redeBasicaCSV({});
+            console.log('📄 CSV recebido:', data.size, 'bytes');
             downloadCSV(data, `relatorio-rede-basica-${new Date().toISOString().split('T')[0]}`);
             toast.success('CSV baixado com sucesso!');
         } catch (error) {
-            console.error('Erro:', error);
+            console.error('❌ Erro CSV:', error);
             toast.error('Erro ao baixar CSV');
         } finally {
             setDownloading(prev => ({ ...prev, csv: false }));
@@ -97,13 +94,15 @@ export default function Relatorios() {
     };
 
     const handleDownloadExcel = async () => {
+        console.log('🔄 Download Excel iniciado');
         setDownloading(prev => ({ ...prev, excel: true }));
         try {
             const data = await relatorioApi.redeBasicaExcel({});
+            console.log('📄 Excel recebido:', data.size, 'bytes');
             downloadExcel(data, `relatorio-rede-basica-${new Date().toISOString().split('T')[0]}`);
             toast.success('Excel baixado com sucesso!');
         } catch (error) {
-            console.error('Erro:', error);
+            console.error('❌ Erro Excel:', error);
             toast.error('Erro ao baixar Excel');
         } finally {
             setDownloading(prev => ({ ...prev, excel: false }));
@@ -111,37 +110,27 @@ export default function Relatorios() {
     };
 
     const handleDownloadPDF = async () => {
-        console.log('🔄 1. Iniciando download do PDF...');
+        console.log('🔄 1. Download PDF iniciado');
         setDownloading(prev => ({ ...prev, pdf: true }));
-
         try {
             console.log('🔄 2. Chamando API...');
             const data = await relatorioApi.redeBasicaPDF({});
-
             console.log('🔄 3. Resposta recebida:', data);
-            console.log('🔄 4. Tipo do dado:', typeof data);
-            console.log('🔄 5. É Blob?', data instanceof Blob);
-            console.log('🔄 6. Tamanho (bytes):', data.size);
-            console.log('🔄 7. Tipo MIME:', data.type);
-
+            console.log('🔄 4. Tamanho:', data.size, 'bytes');
+            console.log('🔄 5. Tipo:', data.type);
+            
             if (!data || data.size === 0) {
-                console.error('❌ 8. PDF vazio ou não gerado!');
-                throw new Error('PDF vazio ou não gerado');
+                throw new Error('PDF vazio');
             }
-
-            console.log('🔄 9. Chamando downloadPDF...');
+            
+            console.log('🔄 6. Chamando downloadPDF...');
             downloadPDF(data, `relatorio-rede-basica-${new Date().toISOString().split('T')[0]}`);
-            console.log('✅ 10. downloadPDF chamado com sucesso!');
+            console.log('✅ 7. downloadPDF chamado com sucesso!');
             toast.success('PDF baixado com sucesso!');
         } catch (error) {
-            console.error('❌ Erro detalhado:', error);
-            if (error instanceof Error) {
-                console.error('❌ Mensagem:', error.message);
-                console.error('❌ Stack:', error.stack);
-            }
+            console.error('❌ Erro PDF:', error);
             toast.error('Erro ao baixar PDF');
         } finally {
-            console.log('🔄 11. Finalizando...');
             setDownloading(prev => ({ ...prev, pdf: false }));
         }
     };
@@ -193,10 +182,6 @@ export default function Relatorios() {
         .sort((a, b) => (b.id || 0) - (a.id || 0))
         .slice(0, 10);
 
-    // ============================================
-    // STATS CARDS
-    // ============================================
-
     const stats = [
         { titulo: 'Total de Pacientes', valor: totalPacientes, icone: Users, cor: 'from-primary-500 to-primary-600' },
         { titulo: 'Pacientes Tratados', valor: tratados, icone: CheckCircle, cor: 'from-emerald-500 to-emerald-600' },
@@ -208,10 +193,6 @@ export default function Relatorios() {
         if (!name || !percent) return '';
         return `${name}: ${(percent * 100).toFixed(0)}%`;
     };
-
-    // ============================================
-    // RENDER
-    // ============================================
 
     if (loading) {
         return (
@@ -231,7 +212,7 @@ export default function Relatorios() {
                 </div>
                 <div className="flex flex-wrap gap-2">
                     <button
-                        onClick={handleDownloadCSV}
+                        onClick={() => { console.log('🔘 CSV clicado'); handleDownloadCSV(); }}
                         disabled={downloading.csv}
                         className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
                     >
@@ -239,7 +220,7 @@ export default function Relatorios() {
                         {downloading.csv ? 'Baixando...' : 'CSV'}
                     </button>
                     <button
-                        onClick={handleDownloadExcel}
+                        onClick={() => { console.log('🔘 Excel clicado'); handleDownloadExcel(); }}
                         disabled={downloading.excel}
                         className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
                     >
@@ -247,7 +228,7 @@ export default function Relatorios() {
                         {downloading.excel ? 'Baixando...' : 'Excel'}
                     </button>
                     <button
-                        onClick={handleDownloadPDF}
+                        onClick={() => { console.log('🔘 PDF clicado'); handleDownloadPDF(); }}
                         disabled={downloading.pdf}
                         className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
                     >
@@ -276,7 +257,6 @@ export default function Relatorios() {
 
             {/* Gráficos */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Pacientes por Localidade */}
                 <div className="bg-white rounded-2xl shadow-sm shadow-slate-200/50 border border-slate-200/50 p-5">
                     <h3 className="text-lg font-semibold text-slate-800 mb-4">Pacientes por Localidade</h3>
                     {pacientesPorLocalidade.length > 0 ? (
@@ -297,7 +277,6 @@ export default function Relatorios() {
                     )}
                 </div>
 
-                {/* Pacientes por PSF */}
                 <div className="bg-white rounded-2xl shadow-sm shadow-slate-200/50 border border-slate-200/50 p-5">
                     <h3 className="text-lg font-semibold text-slate-800 mb-4">Pacientes por PSF</h3>
                     {pacientesPorPSF.length > 0 ? (
