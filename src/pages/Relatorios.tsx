@@ -1,5 +1,4 @@
 // src/pages/Relatorios.tsx
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
     BarChart,
@@ -72,118 +71,11 @@ export default function Relatorios() {
     }, [loadData]);
 
     // ============================================
-    // FUNÇÕES DE DOWNLOAD (VERSÃO CORRIGIDA)
+    // FUNÇÕES DE DOWNLOAD (USANDO O CÓDIGO QUE FUNCIONOU)
     // ============================================
 
-    const handleDownloadCSV = async () => {
-        console.log('🔄 Iniciando download CSV...');
-        setDownloading(prev => ({ ...prev, csv: true }));
-        try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                toast.error('Token não encontrado. Faça login novamente.');
-                return;
-            }
-
-            const response = await fetch('https://backend-controle-tratamento.onrender.com/api/relatorios/rede-basica/csv', {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'text/csv',
-                },
-            });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('Erro do servidor:', errorText);
-                throw new Error(`Erro HTTP: ${response.status}`);
-            }
-
-            // 🔥 CRIA O BLOB COM O TIPO CORRETO
-            const blob = await response.blob();
-            console.log('📄 CSV recebido:', blob.size, 'bytes');
-
-            if (blob.size === 0) {
-                throw new Error('Arquivo CSV vazio');
-            }
-
-            // 🔥 FORÇA O DOWNLOAD USANDO window.open COMO FALLBACK
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `relatorio-rede-basica-${new Date().toISOString().split('T')[0]}.csv`;
-            link.style.display = 'none';
-            document.body.appendChild(link);
-            link.click();
-
-            // 🔥 FALLBACK: Se o download não iniciar, tenta com window.open
-            setTimeout(() => {
-                document.body.removeChild(link);
-                window.URL.revokeObjectURL(url);
-            }, 100);
-
-            toast.success('CSV baixado com sucesso!');
-        } catch (error) {
-            console.error('❌ Erro CSV:', error);
-            toast.error('Erro ao baixar CSV');
-        } finally {
-            setDownloading(prev => ({ ...prev, csv: false }));
-        }
-    };
-
-    const handleDownloadExcel = async () => {
-        console.log('🔄 Iniciando download Excel...');
-        setDownloading(prev => ({ ...prev, excel: true }));
-        try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                toast.error('Token não encontrado. Faça login novamente.');
-                return;
-            }
-
-            const response = await fetch('https://backend-controle-tratamento.onrender.com/api/relatorios/rede-basica/excel', {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                },
-            });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('Erro do servidor:', errorText);
-                throw new Error(`Erro HTTP: ${response.status}`);
-            }
-
-            const blob = await response.blob();
-            console.log('📄 Excel recebido:', blob.size, 'bytes');
-
-            if (blob.size === 0) {
-                throw new Error('Arquivo Excel vazio');
-            }
-
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `relatorio-rede-basica-${new Date().toISOString().split('T')[0]}.xlsx`;
-            link.style.display = 'none';
-            document.body.appendChild(link);
-            link.click();
-
-            setTimeout(() => {
-                document.body.removeChild(link);
-                window.URL.revokeObjectURL(url);
-            }, 100);
-
-            toast.success('Excel baixado com sucesso!');
-        } catch (error) {
-            console.error('❌ Erro Excel:', error);
-            toast.error('Erro ao baixar Excel');
-        } finally {
-            setDownloading(prev => ({ ...prev, excel: false }));
-        }
-    };
-
-    const handleDownloadPDF = async () => {
-        console.log('🔄 Iniciando download PDF...');
+    const downloadPDF = async () => {
+        console.log('🔘 Download PDF iniciado pelo botão');
         setDownloading(prev => ({ ...prev, pdf: true }));
         try {
             const token = localStorage.getItem('token');
@@ -192,45 +84,149 @@ export default function Relatorios() {
                 return;
             }
 
-            const response = await fetch('https://backend-controle-tratamento.onrender.com/api/relatorios/rede-basica/pdf', {
+            console.log('📤 Enviando requisição...');
+            const response = await fetch('https://backend-controle-tratamento.onrender.com/api/relatorios/rede-basica/pdf?ano=2024', {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Accept': 'application/pdf',
                 },
             });
 
+            console.log('📊 Status:', response.status);
+
             if (!response.ok) {
-                const errorText = await response.text();
-                console.error('Erro do servidor:', errorText);
-                throw new Error(`Erro HTTP: ${response.status}`);
+                const text = await response.text();
+                console.error('❌ Erro do servidor:', text);
+                toast.error('Erro ao gerar PDF');
+                return;
             }
 
             const blob = await response.blob();
-            console.log('📄 PDF recebido:', blob.size, 'bytes');
+            console.log('📄 Tamanho:', blob.size, 'bytes');
 
-            if (blob.size === 0) {
-                throw new Error('Arquivo PDF vazio');
+            if (blob.size > 0) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `relatorio-${Date.now()}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                console.log('✅ DOWNLOAD INICIADO!');
+                toast.success('PDF baixado com sucesso!');
+            } else {
+                toast.error('PDF vazio!');
             }
-
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `relatorio-rede-basica-${new Date().toISOString().split('T')[0]}.pdf`;
-            link.style.display = 'none';
-            document.body.appendChild(link);
-            link.click();
-
-            setTimeout(() => {
-                document.body.removeChild(link);
-                window.URL.revokeObjectURL(url);
-            }, 100);
-
-            toast.success('PDF baixado com sucesso!');
         } catch (error) {
-            console.error('❌ Erro PDF:', error);
+            console.error('❌ Erro:', error);
             toast.error('Erro ao baixar PDF');
         } finally {
             setDownloading(prev => ({ ...prev, pdf: false }));
+        }
+    };
+
+    const downloadCSV = async () => {
+        console.log('🔘 Download CSV iniciado pelo botão');
+        setDownloading(prev => ({ ...prev, csv: true }));
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                toast.error('Token não encontrado. Faça login novamente.');
+                return;
+            }
+
+            console.log('📤 Enviando requisição...');
+            const response = await fetch('https://backend-controle-tratamento.onrender.com/api/relatorios/rede-basica/csv?ano=2024', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'text/csv',
+                },
+            });
+
+            console.log('📊 Status:', response.status);
+
+            if (!response.ok) {
+                const text = await response.text();
+                console.error('❌ Erro do servidor:', text);
+                toast.error('Erro ao gerar CSV');
+                return;
+            }
+
+            const blob = await response.blob();
+            console.log('📄 Tamanho:', blob.size, 'bytes');
+
+            if (blob.size > 0) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `relatorio-${Date.now()}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                console.log('✅ DOWNLOAD INICIADO!');
+                toast.success('CSV baixado com sucesso!');
+            } else {
+                toast.error('CSV vazio!');
+            }
+        } catch (error) {
+            console.error('❌ Erro:', error);
+            toast.error('Erro ao baixar CSV');
+        } finally {
+            setDownloading(prev => ({ ...prev, csv: false }));
+        }
+    };
+
+    const downloadExcel = async () => {
+        console.log('🔘 Download Excel iniciado pelo botão');
+        setDownloading(prev => ({ ...prev, excel: true }));
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                toast.error('Token não encontrado. Faça login novamente.');
+                return;
+            }
+
+            console.log('📤 Enviando requisição...');
+            const response = await fetch('https://backend-controle-tratamento.onrender.com/api/relatorios/rede-basica/excel?ano=2024', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                },
+            });
+
+            console.log('📊 Status:', response.status);
+
+            if (!response.ok) {
+                const text = await response.text();
+                console.error('❌ Erro do servidor:', text);
+                toast.error('Erro ao gerar Excel');
+                return;
+            }
+
+            const blob = await response.blob();
+            console.log('📄 Tamanho:', blob.size, 'bytes');
+
+            if (blob.size > 0) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `relatorio-${Date.now()}.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                console.log('✅ DOWNLOAD INICIADO!');
+                toast.success('Excel baixado com sucesso!');
+            } else {
+                toast.error('Excel vazio!');
+            }
+        } catch (error) {
+            console.error('❌ Erro:', error);
+            toast.error('Erro ao baixar Excel');
+        } finally {
+            setDownloading(prev => ({ ...prev, excel: false }));
         }
     };
 
@@ -303,7 +299,6 @@ export default function Relatorios() {
 
     return (
         <div className="space-y-6">
-            {/* Header com botões de download */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-800">Relatórios</h1>
@@ -311,7 +306,7 @@ export default function Relatorios() {
                 </div>
                 <div className="flex flex-wrap gap-2">
                     <button
-                        onClick={() => { console.log('🔘 CSV clicado'); handleDownloadCSV(); }}
+                        onClick={downloadCSV}
                         disabled={downloading.csv}
                         className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
                     >
@@ -319,7 +314,7 @@ export default function Relatorios() {
                         {downloading.csv ? 'Baixando...' : 'CSV'}
                     </button>
                     <button
-                        onClick={() => { console.log('🔘 Excel clicado'); handleDownloadExcel(); }}
+                        onClick={downloadExcel}
                         disabled={downloading.excel}
                         className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
                     >
@@ -327,7 +322,7 @@ export default function Relatorios() {
                         {downloading.excel ? 'Baixando...' : 'Excel'}
                     </button>
                     <button
-                        onClick={() => { console.log('🔘 PDF clicado'); handleDownloadPDF(); }}
+                        onClick={downloadPDF}
                         disabled={downloading.pdf}
                         className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
                     >
