@@ -1,3 +1,5 @@
+// src/pages/Relatorios.tsx
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
     BarChart,
@@ -17,9 +19,14 @@ import {
     Users,
     CheckCircle,
     Clock,
-    FileText
+    FileText,
+    Download,
+    FileSpreadsheet,
+    File as FilePdf  // Renomeado para evitar conflito com File nativo
 } from 'lucide-react';
 import { redeBasicaApi, rotinaApi, localidadeApi, psfApi } from '../api';
+import { relatorioApi } from '../api/relatorioApi';
+import { downloadCSV, downloadExcel, downloadPDF } from '../utils/downloadUtils';
 import type { RedeBasica, Rotina, Localidade, PSF } from '../types';
 import toast from 'react-hot-toast';
 
@@ -28,6 +35,11 @@ const COLORS = ['#0ea5e9', '#22c55e', '#eab308', '#ef4444', '#8b5cf6', '#ec4899'
 
 export default function Relatorios() {
     const [loading, setLoading] = useState(true);
+    const [downloading, setDownloading] = useState({
+        csv: false,
+        excel: false,
+        pdf: false,
+    });
     const [pacientesRede, setPacientesRede] = useState<RedeBasica[]>([]);
     const [pacientesRotina, setPacientesRotina] = useState<Rotina[]>([]);
     const [localidades, setLocalidades] = useState<Localidade[]>([]);
@@ -38,20 +50,16 @@ export default function Relatorios() {
     // CARREGAR DADOS
     // ============================================
 
-    // src/pages/Relatorios.tsx
-    // No loadData, altere:
-
     const loadData = useCallback(async () => {
         try {
             setLoading(true);
             const [redeResponse, rotinaResponse, locais, psfsData] = await Promise.all([
-                redeBasicaApi.listar({}, 1, 1000),  // Retorna PaginatedResponse
-                rotinaApi.listar({}, 1, 1000),      // Retorna PaginatedResponse
+                redeBasicaApi.listar({}, 1, 1000),
+                rotinaApi.listar({}, 1, 1000),
                 localidadeApi.listar(),
                 psfApi.listar()
             ]);
 
-            // Extrair os dados da resposta paginada
             setPacientesRede(redeResponse.data);
             setPacientesRotina(rotinaResponse.data);
             setLocalidades(locais);
@@ -63,13 +71,58 @@ export default function Relatorios() {
         }
     }, []);
 
-    // Carregar dados na primeira renderização
     useEffect(() => {
         if (isFirstRender.current) {
             isFirstRender.current = false;
             loadData();
         }
     }, [loadData]);
+
+    // ============================================
+    // FUNÇÕES DE DOWNLOAD
+    // ============================================
+
+    const handleDownloadCSV = async () => {
+        setDownloading(prev => ({ ...prev, csv: true }));
+        try {
+            const data = await relatorioApi.redeBasicaCSV({});
+            downloadCSV(data, `relatorio-rede-basica-${new Date().toISOString().split('T')[0]}`);
+            toast.success('CSV baixado com sucesso!');
+        } catch (error) {
+            console.error('Erro:', error);
+            toast.error('Erro ao baixar CSV');
+        } finally {
+            setDownloading(prev => ({ ...prev, csv: false }));
+        }
+    };
+
+    const handleDownloadExcel = async () => {
+        setDownloading(prev => ({ ...prev, excel: true }));
+        try {
+            const data = await relatorioApi.redeBasicaExcel({});
+            downloadExcel(data, `relatorio-rede-basica-${new Date().toISOString().split('T')[0]}`);
+            toast.success('Excel baixado com sucesso!');
+        } catch (error) {
+            console.error('Erro:', error);
+            toast.error('Erro ao baixar Excel');
+        } finally {
+            setDownloading(prev => ({ ...prev, excel: false }));
+        }
+    };
+
+    const handleDownloadPDF = async () => {
+        setDownloading(prev => ({ ...prev, pdf: true }));
+        try {
+            const data = await relatorioApi.redeBasicaPDF({});
+            downloadPDF(data, `relatorio-rede-basica-${new Date().toISOString().split('T')[0]}`);
+            toast.success('PDF baixado com sucesso!');
+        } catch (error) {
+            console.error('Erro:', error);
+            toast.error('Erro ao baixar PDF');
+        } finally {
+            setDownloading(prev => ({ ...prev, pdf: false }));
+        }
+    };
 
     // ============================================
     // CÁLCULO DE ESTATÍSTICAS
@@ -81,25 +134,16 @@ export default function Relatorios() {
     const pendentes = todosPacientes.filter(p => p.entrega_medicamento === 'N').length;
     const revisoesFeitas = todosPacientes.filter(p => p.revisao === 'S').length;
 
-    // Pacientes por localidade
     const pacientesPorLocalidade = localidades.map(local => {
         const count = todosPacientes.filter(p => p.localidade_id === local.id).length;
-        return {
-            nome: local.nome,
-            quantidade: count
-        };
+        return { nome: local.nome, quantidade: count };
     }).filter(item => item.quantidade > 0).sort((a, b) => b.quantidade - a.quantidade);
 
-    // Pacientes por PSF
     const pacientesPorPSF = psfs.map(psf => {
         const count = todosPacientes.filter(p => p.psf_id === psf.id).length;
-        return {
-            nome: psf.nome,
-            quantidade: count
-        };
+        return { nome: psf.nome, quantidade: count };
     }).filter(item => item.quantidade > 0).sort((a, b) => b.quantidade - a.quantidade);
 
-    // Evolução mensal (últimos 6 meses)
     const evolucaoMensal = () => {
         const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
         const mesAtual = new Date().getMonth();
@@ -123,8 +167,6 @@ export default function Relatorios() {
     };
 
     const dadosEvolucao = evolucaoMensal();
-
-    // Últimos pacientes cadastrados (10 mais recentes)
     const ultimosPacientes = [...todosPacientes]
         .sort((a, b) => (b.id || 0) - (a.id || 0))
         .slice(0, 10);
@@ -134,39 +176,11 @@ export default function Relatorios() {
     // ============================================
 
     const stats = [
-        {
-            titulo: 'Total de Pacientes',
-            valor: totalPacientes,
-            icone: Users,
-            cor: 'from-primary-500 to-primary-600',
-            bgColor: 'bg-primary-50'
-        },
-        {
-            titulo: 'Pacientes Tratados',
-            valor: tratados,
-            icone: CheckCircle,
-            cor: 'from-emerald-500 to-emerald-600',
-            bgColor: 'bg-emerald-50'
-        },
-        {
-            titulo: 'Aguardando Tratamento',
-            valor: pendentes,
-            icone: Clock,
-            cor: 'from-amber-500 to-amber-600',
-            bgColor: 'bg-amber-50'
-        },
-        {
-            titulo: 'Revisões Realizadas',
-            valor: revisoesFeitas,
-            icone: FileText,
-            cor: 'from-violet-500 to-violet-600',
-            bgColor: 'bg-violet-50'
-        }
+        { titulo: 'Total de Pacientes', valor: totalPacientes, icone: Users, cor: 'from-primary-500 to-primary-600' },
+        { titulo: 'Pacientes Tratados', valor: tratados, icone: CheckCircle, cor: 'from-emerald-500 to-emerald-600' },
+        { titulo: 'Aguardando Tratamento', valor: pendentes, icone: Clock, cor: 'from-amber-500 to-amber-600' },
+        { titulo: 'Revisões Realizadas', valor: revisoesFeitas, icone: FileText, cor: 'from-violet-500 to-violet-600' }
     ];
-
-    // ============================================
-    // LABEL PERSONALIZADO PARA O PIE CHART
-    // ============================================
 
     const renderPieLabel = ({ name, percent }: { name?: string; percent?: number }) => {
         if (!name || !percent) return '';
@@ -187,10 +201,38 @@ export default function Relatorios() {
 
     return (
         <div className="space-y-6">
-            {/* Header */}
-            <div>
-                <h1 className="text-2xl font-bold text-slate-800">Relatórios</h1>
-                <p className="text-slate-500 text-sm">Visão consolidada dos dados do sistema</p>
+            {/* Header com botões de download */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold text-slate-800">Relatórios</h1>
+                    <p className="text-slate-500 text-sm">Visão consolidada dos dados do sistema</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                    <button
+                        onClick={handleDownloadCSV}
+                        disabled={downloading.csv}
+                        className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
+                    >
+                        <Download size={16} />
+                        {downloading.csv ? 'Baixando...' : 'CSV'}
+                    </button>
+                    <button
+                        onClick={handleDownloadExcel}
+                        disabled={downloading.excel}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                    >
+                        <FileSpreadsheet size={16} />
+                        {downloading.excel ? 'Baixando...' : 'Excel'}
+                    </button>
+                    <button
+                        onClick={handleDownloadPDF}
+                        disabled={downloading.pdf}
+                        className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
+                    >
+                        <FilePdf size={16} />
+                        {downloading.pdf ? 'Baixando...' : 'PDF'}
+                    </button>
+                </div>
             </div>
 
             {/* Stats Cards */}
