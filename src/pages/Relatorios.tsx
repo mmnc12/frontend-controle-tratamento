@@ -25,8 +25,6 @@ import {
     File as FilePdf
 } from 'lucide-react';
 import { redeBasicaApi, rotinaApi, localidadeApi, psfApi } from '../api';
-// import { relatorioApi } from '../api/relatorioApi';
-// import { downloadCSV, downloadExcel, downloadPDF } from '../utils/downloadUtils';
 import type { RedeBasica, Rotina, Localidade, PSF } from '../types';
 import toast from 'react-hot-toast';
 
@@ -74,11 +72,7 @@ export default function Relatorios() {
     }, [loadData]);
 
     // ============================================
-    // FUNÇÕES DE DOWNLOAD (VERSÃO SIMPLIFICADA)
-    // ============================================
-
-    // ============================================
-    // FUNÇÕES DE DOWNLOAD (VERSÃO COM FETCH DIRETO)
+    // FUNÇÕES DE DOWNLOAD (VERSÃO CORRIGIDA)
     // ============================================
 
     const handleDownloadCSV = async () => {
@@ -91,18 +85,25 @@ export default function Relatorios() {
                 return;
             }
 
-            const response = await fetch('https://backend-controle-tratamento.onrender.com/api/relatorios/rede-basica/csv?ano=2024', {
+            const response = await fetch('https://backend-controle-tratamento.onrender.com/api/relatorios/rede-basica/csv', {
                 headers: {
                     'Authorization': `Bearer ${token}`,
+                    'Accept': 'text/csv',
                 },
             });
 
             if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Erro do servidor:', errorText);
                 throw new Error(`Erro HTTP: ${response.status}`);
             }
 
             const blob = await response.blob();
             console.log('📄 CSV recebido:', blob.size, 'bytes');
+
+            if (blob.size === 0) {
+                throw new Error('Arquivo CSV vazio');
+            }
 
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
@@ -132,18 +133,25 @@ export default function Relatorios() {
                 return;
             }
 
-            const response = await fetch('https://backend-controle-tratamento.onrender.com/api/relatorios/rede-basica/excel?ano=2024', {
+            const response = await fetch('https://backend-controle-tratamento.onrender.com/api/relatorios/rede-basica/excel', {
                 headers: {
                     'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                 },
             });
 
             if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Erro do servidor:', errorText);
                 throw new Error(`Erro HTTP: ${response.status}`);
             }
 
             const blob = await response.blob();
             console.log('📄 Excel recebido:', blob.size, 'bytes');
+
+            if (blob.size === 0) {
+                throw new Error('Arquivo Excel vazio');
+            }
 
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
@@ -173,18 +181,25 @@ export default function Relatorios() {
                 return;
             }
 
-            const response = await fetch('https://backend-controle-tratamento.onrender.com/api/relatorios/rede-basica/pdf?ano=2024', {
+            const response = await fetch('https://backend-controle-tratamento.onrender.com/api/relatorios/rede-basica/pdf', {
                 headers: {
                     'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/pdf',
                 },
             });
 
             if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Erro do servidor:', errorText);
                 throw new Error(`Erro HTTP: ${response.status}`);
             }
 
             const blob = await response.blob();
             console.log('📄 PDF recebido:', blob.size, 'bytes');
+
+            if (blob.size === 0) {
+                throw new Error('Arquivo PDF vazio');
+            }
 
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
