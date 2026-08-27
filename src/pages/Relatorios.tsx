@@ -76,7 +76,7 @@ export default function Relatorios() {
     // ============================================
 
     const handleDownloadCSV = async () => {
-        console.log('🔄 Download CSV iniciado');
+        console.log('🔄 Iniciando download CSV...');
         setDownloading(prev => ({ ...prev, csv: true }));
         try {
             const token = localStorage.getItem('token');
@@ -98,6 +98,7 @@ export default function Relatorios() {
                 throw new Error(`Erro HTTP: ${response.status}`);
             }
 
+            // 🔥 CRIA O BLOB COM O TIPO CORRETO
             const blob = await response.blob();
             console.log('📄 CSV recebido:', blob.size, 'bytes');
 
@@ -105,14 +106,20 @@ export default function Relatorios() {
                 throw new Error('Arquivo CSV vazio');
             }
 
+            // 🔥 FORÇA O DOWNLOAD USANDO window.open COMO FALLBACK
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
             link.download = `relatorio-rede-basica-${new Date().toISOString().split('T')[0]}.csv`;
+            link.style.display = 'none';
             document.body.appendChild(link);
             link.click();
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(url);
+
+            // 🔥 FALLBACK: Se o download não iniciar, tenta com window.open
+            setTimeout(() => {
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+            }, 100);
 
             toast.success('CSV baixado com sucesso!');
         } catch (error) {
@@ -124,7 +131,7 @@ export default function Relatorios() {
     };
 
     const handleDownloadExcel = async () => {
-        console.log('🔄 Download Excel iniciado');
+        console.log('🔄 Iniciando download Excel...');
         setDownloading(prev => ({ ...prev, excel: true }));
         try {
             const token = localStorage.getItem('token');
@@ -157,10 +164,14 @@ export default function Relatorios() {
             const link = document.createElement('a');
             link.href = url;
             link.download = `relatorio-rede-basica-${new Date().toISOString().split('T')[0]}.xlsx`;
+            link.style.display = 'none';
             document.body.appendChild(link);
             link.click();
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(url);
+
+            setTimeout(() => {
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+            }, 100);
 
             toast.success('Excel baixado com sucesso!');
         } catch (error) {
@@ -172,7 +183,7 @@ export default function Relatorios() {
     };
 
     const handleDownloadPDF = async () => {
-        console.log('🔄 Download PDF iniciado');
+        console.log('🔄 Iniciando download PDF...');
         setDownloading(prev => ({ ...prev, pdf: true }));
         try {
             const token = localStorage.getItem('token');
@@ -205,10 +216,14 @@ export default function Relatorios() {
             const link = document.createElement('a');
             link.href = url;
             link.download = `relatorio-rede-basica-${new Date().toISOString().split('T')[0]}.pdf`;
+            link.style.display = 'none';
             document.body.appendChild(link);
             link.click();
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(url);
+
+            setTimeout(() => {
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+            }, 100);
 
             toast.success('PDF baixado com sucesso!');
         } catch (error) {
