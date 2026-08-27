@@ -17,7 +17,7 @@ import {
   Search,
   XCircle
 } from 'lucide-react';
-import { rotinaApi, localidadeApi, psfApi, relatorioApi } from '../api';
+import { rotinaApi, localidadeApi, psfApi } from '../api';
 import type { Rotina, Localidade, PSF, FiltrosRotina, ApiError } from '../types';
 import toast from 'react-hot-toast';
 import Pagination from '../components/ui/Pagination';
@@ -382,43 +382,75 @@ export default function Rotina() {
   // ============================================
 
   const exportarRelatorio = async (formato: 'csv' | 'excel' | 'pdf') => {
+    console.log(`🔘 Botão ${formato.toUpperCase()} clicado - ROTINA`);
     try {
       const toastId = toast.loading(`Gerando relatório ${formato.toUpperCase()}...`);
+      const token = localStorage.getItem('token');
 
-      const filtrosExportacao = { ...filtros };
-      if (debouncedSearchTerm.trim()) {
-        filtrosExportacao.nome = debouncedSearchTerm.trim();
+      if (!token) {
+        toast.error('Token não encontrado. Faça login novamente.');
+        return;
       }
 
-      let blob: Blob;
-      switch (formato) {
-        case 'csv':
-          blob = await relatorioApi.rotinaCSV(filtrosExportacao);
-          break;
-        case 'excel':
-          // ⚠️ Backend não tem rota para Excel de Rotina ainda
-          toast.error('Excel para Rotina ainda não disponível. Baixando CSV...', { id: toastId });
-          blob = await relatorioApi.rotinaCSV(filtrosExportacao);
-          break;
-        case 'pdf':
-          // ⚠️ Backend não tem rota para PDF de Rotina ainda
-          toast.error('PDF para Rotina ainda não disponível. Baixando CSV...', { id: toastId });
-          blob = await relatorioApi.rotinaCSV(filtrosExportacao);
-          break;
-        default:
-          return;
+      let url = `https://backend-controle-tratamento.onrender.com/api/relatorios/rotina/${formato}`;
+      let acceptHeader = '';
+
+      // Fallback: Se for PDF ou Excel, usar CSV (já que as rotas não existem)
+      if (formato === 'pdf' || formato === 'excel') {
+        toast.error(`${formato.toUpperCase()} para Rotina ainda não disponível. Baixando CSV...`, { id: toastId });
+        url = `https://backend-controle-tratamento.onrender.com/api/relatorios/rotina/csv`;
+        acceptHeader = 'text/csv';
+      } else {
+        acceptHeader = 'text/csv';
       }
 
-      const url = window.URL.createObjectURL(blob);
+      // Adicionar filtros à URL
+      const params = new URLSearchParams();
+      if (filtros.ano) params.append('ano', String(filtros.ano));
+      if (filtros.localidade_id) params.append('localidade_id', String(filtros.localidade_id));
+      if (filtros.psf_id) params.append('psf_id', String(filtros.psf_id));
+      if (debouncedSearchTerm.trim()) params.append('nome', debouncedSearchTerm.trim());
+
+      const urlComParams = params.toString() ? `${url}?${params.toString()}` : url;
+
+      console.log('📤 URL:', urlComParams);
+
+      const response = await fetch(urlComParams, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': acceptHeader,
+        },
+      });
+
+      console.log('📊 Status:', response.status);
+
+      if (!response.ok) {
+        const text = await response.text();
+        console.error('❌ Erro do servidor:', text);
+        toast.error(`Erro: ${response.status}`, { id: toastId });
+        return;
+      }
+
+      const blob = await response.blob();
+      console.log('📄 Blob criado. Tamanho:', blob.size, 'bytes');
+
+      if (blob.size === 0) {
+        toast.error('Arquivo vazio', { id: toastId });
+        return;
+      }
+
+      const downloadUrl = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      const extensao = formato === 'excel' ? 'xlsx' : formato;
+      link.href = downloadUrl;
+      const extensao = (formato === 'pdf' || formato === 'excel') ? 'csv' : formato;
       link.download = `relatorio_rotina.${extensao}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      URL.revokeObjectURL(downloadUrl);
 
-      toast.success(`Relatório ${formato.toUpperCase()} gerado com sucesso!`, { id: toastId });
+      const nomeFormato = (formato === 'pdf' || formato === 'excel') ? 'CSV (fallback)' : formato.toUpperCase();
+      toast.success(`Relatório ${nomeFormato} gerado com sucesso!`, { id: toastId });
     } catch (error) {
       console.error('❌ Erro ao exportar relatório:', error);
       toast.error('Erro ao gerar relatório');
