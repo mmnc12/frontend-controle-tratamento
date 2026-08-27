@@ -25,8 +25,8 @@ import {
     File as FilePdf
 } from 'lucide-react';
 import { redeBasicaApi, rotinaApi, localidadeApi, psfApi } from '../api';
-import { relatorioApi } from '../api/relatorioApi';
-import { downloadCSV, downloadExcel, downloadPDF } from '../utils/downloadUtils';
+// import { relatorioApi } from '../api/relatorioApi';
+// import { downloadCSV, downloadExcel, downloadPDF } from '../utils/downloadUtils';
 import type { RedeBasica, Rotina, Localidade, PSF } from '../types';
 import toast from 'react-hot-toast';
 
@@ -77,13 +77,42 @@ export default function Relatorios() {
     // FUNÇÕES DE DOWNLOAD (VERSÃO SIMPLIFICADA)
     // ============================================
 
+    // ============================================
+    // FUNÇÕES DE DOWNLOAD (VERSÃO COM FETCH DIRETO)
+    // ============================================
+
     const handleDownloadCSV = async () => {
         console.log('🔄 Download CSV iniciado');
         setDownloading(prev => ({ ...prev, csv: true }));
         try {
-            const data = await relatorioApi.redeBasicaCSV({});
-            console.log('📄 CSV recebido:', data.size, 'bytes');
-            downloadCSV(data, `relatorio-rede-basica-${new Date().toISOString().split('T')[0]}`);
+            const token = localStorage.getItem('token');
+            if (!token) {
+                toast.error('Token não encontrado. Faça login novamente.');
+                return;
+            }
+
+            const response = await fetch('https://backend-controle-tratamento.onrender.com/api/relatorios/rede-basica/csv?ano=2024', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error(`Erro HTTP: ${response.status}`);
+            }
+
+            const blob = await response.blob();
+            console.log('📄 CSV recebido:', blob.size, 'bytes');
+
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `relatorio-rede-basica-${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+
             toast.success('CSV baixado com sucesso!');
         } catch (error) {
             console.error('❌ Erro CSV:', error);
@@ -97,9 +126,34 @@ export default function Relatorios() {
         console.log('🔄 Download Excel iniciado');
         setDownloading(prev => ({ ...prev, excel: true }));
         try {
-            const data = await relatorioApi.redeBasicaExcel({});
-            console.log('📄 Excel recebido:', data.size, 'bytes');
-            downloadExcel(data, `relatorio-rede-basica-${new Date().toISOString().split('T')[0]}`);
+            const token = localStorage.getItem('token');
+            if (!token) {
+                toast.error('Token não encontrado. Faça login novamente.');
+                return;
+            }
+
+            const response = await fetch('https://backend-controle-tratamento.onrender.com/api/relatorios/rede-basica/excel?ano=2024', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error(`Erro HTTP: ${response.status}`);
+            }
+
+            const blob = await response.blob();
+            console.log('📄 Excel recebido:', blob.size, 'bytes');
+
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `relatorio-rede-basica-${new Date().toISOString().split('T')[0]}.xlsx`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+
             toast.success('Excel baixado com sucesso!');
         } catch (error) {
             console.error('❌ Erro Excel:', error);
@@ -110,22 +164,37 @@ export default function Relatorios() {
     };
 
     const handleDownloadPDF = async () => {
-        console.log('🔄 1. Download PDF iniciado');
+        console.log('🔄 Download PDF iniciado');
         setDownloading(prev => ({ ...prev, pdf: true }));
         try {
-            console.log('🔄 2. Chamando API...');
-            const data = await relatorioApi.redeBasicaPDF({});
-            console.log('🔄 3. Resposta recebida:', data);
-            console.log('🔄 4. Tamanho:', data.size, 'bytes');
-            console.log('🔄 5. Tipo:', data.type);
-            
-            if (!data || data.size === 0) {
-                throw new Error('PDF vazio');
+            const token = localStorage.getItem('token');
+            if (!token) {
+                toast.error('Token não encontrado. Faça login novamente.');
+                return;
             }
-            
-            console.log('🔄 6. Chamando downloadPDF...');
-            downloadPDF(data, `relatorio-rede-basica-${new Date().toISOString().split('T')[0]}`);
-            console.log('✅ 7. downloadPDF chamado com sucesso!');
+
+            const response = await fetch('https://backend-controle-tratamento.onrender.com/api/relatorios/rede-basica/pdf?ano=2024', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error(`Erro HTTP: ${response.status}`);
+            }
+
+            const blob = await response.blob();
+            console.log('📄 PDF recebido:', blob.size, 'bytes');
+
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `relatorio-rede-basica-${new Date().toISOString().split('T')[0]}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+
             toast.success('PDF baixado com sucesso!');
         } catch (error) {
             console.error('❌ Erro PDF:', error);
