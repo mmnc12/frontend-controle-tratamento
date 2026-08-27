@@ -392,7 +392,7 @@ export default function Rotina() {
         return;
       }
 
-      const url = `https://backend-controle-tratamento.onrender.com/api/relatorios/rede-basica/${formato}`;
+      const url = `https://backend-controle-tratamento.onrender.com/api/relatorios/rotina/${formato}`;
       let acceptHeader = '';
 
       switch (formato) {
