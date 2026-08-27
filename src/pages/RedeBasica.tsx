@@ -359,84 +359,85 @@ export default function RedeBasica() {
   // ============================================
 
   const exportarRelatorio = async (formato: 'csv' | 'excel' | 'pdf') => {
-  console.log(`🔘 Botão ${formato.toUpperCase()} clicado`);
-  try {
-    const toastId = toast.loading(`Gerando relatório ${formato.toUpperCase()}...`);
-    const token = localStorage.getItem('token');
+    console.log(`🔘 Botão ${formato.toUpperCase()} clicado`);
+    try {
+      const toastId = toast.loading(`Gerando relatório ${formato.toUpperCase()}...`);
+      const token = localStorage.getItem('token');
 
-    if (!token) {
-      toast.error('Token não encontrado. Faça login novamente.');
-      return;
-    }
-
-    const url = `https://backend-controle-tratamento.onrender.com/api/relatorios/rede-basica/${formato}`;
-    let acceptHeader = '';
-
-    switch (formato) {
-      case 'csv':
-        acceptHeader = 'text/csv';
-        break;
-      case 'excel':
-        acceptHeader = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-        break;
-      case 'pdf':
-        acceptHeader = 'application/pdf';
-        break;
-      default:
+      if (!token) {
+        toast.error('Token não encontrado. Faça login novamente.');
         return;
+      }
+
+      const url = `https://backend-controle-tratamento.onrender.com/api/relatorios/rede-basica/${formato}`;
+      let acceptHeader = '';
+
+      switch (formato) {
+        case 'csv':
+          acceptHeader = 'text/csv';
+          break;
+        case 'excel':
+          acceptHeader = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+          break;
+        case 'pdf':
+          acceptHeader = 'application/pdf';
+          break;
+        default:
+          return;
+      }
+
+      // Adicionar filtros à URL
+      const params = new URLSearchParams();
+      if (filtros.ano) params.append('ano', String(filtros.ano));
+      if (filtros.localidade_id) params.append('localidade_id', String(filtros.localidade_id));
+      if (filtros.psf_id) params.append('psf_id', String(filtros.psf_id));
+      if (debouncedSearchTerm.trim()) params.append('nome', debouncedSearchTerm.trim());
+
+      const urlComParams = params.toString() ? `${url}?${params.toString()}` : url;
+
+      console.log('📤 URL:', urlComParams);
+
+      const response = await fetch(urlComParams, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': acceptHeader,
+        },
+      });
+
+      console.log('📊 Status:', response.status);
+
+      if (!response.ok) {
+        const text = await response.text();
+        console.error('❌ Erro do servidor:', text);
+        toast.error(`Erro: ${response.status}`, { id: toastId });
+        return;
+      }
+
+      const blob = await response.blob();
+      console.log('📄 Blob criado. Tamanho:', blob.size, 'bytes');
+
+      if (blob.size === 0) {
+        toast.error('Arquivo vazio', { id: toastId });
+        return;
+      }
+
+      // 🔥 PARTE QUE FALTAVA - DOWNLOAD
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      const extensao = formato === 'excel' ? 'xlsx' : formato;
+      link.download = `relatorio_rede_basica.${extensao}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(downloadUrl);
+
+      toast.success(`Relatório ${formato.toUpperCase()} gerado com sucesso!`, { id: toastId });
+    } catch (error) {
+      console.error('❌ Erro ao exportar relatório:', error);
+      toast.error('Erro ao gerar relatório');
     }
-
-    // Adicionar filtros à URL
-    const params = new URLSearchParams();
-    if (filtros.ano) params.append('ano', String(filtros.ano));
-    if (filtros.localidade_id) params.append('localidade_id', String(filtros.localidade_id));
-    if (filtros.psf_id) params.append('psf_id', String(filtros.psf_id));
-    if (debouncedSearchTerm.trim()) params.append('nome', debouncedSearchTerm.trim());
-    
-    const urlComParams = params.toString() ? `${url}?${params.toString()}` : url;
-
-    console.log('📤 URL:', urlComParams);
-
-    const response = await fetch(urlComParams, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': acceptHeader,
-      },
-    });
-
-    console.log('📊 Status:', response.status);
-
-    if (!response.ok) {
-      const text = await response.text();
-      console.error('❌ Erro do servidor:', text);
-      toast.error(`Erro: ${response.status}`, { id: toastId });
-      return;
-    }
-
-    const blob = await response.blob();
-    console.log('📄 Blob criado. Tamanho:', blob.size, 'bytes');
-
-    if (blob.size === 0) {
-      toast.error('Arquivo vazio', { id: toastId });
-      return;
-    }
-
-    const downloadUrl = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    const extensaoArquivo = formato === 'excel' ? 'xlsx' : formato;
-    link.download = `relatorio_rede_basica.${extensaoArquivo}`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(downloadUrl);
-
-    toast.success(`Relatório ${formato.toUpperCase()} gerado com sucesso!`, { id: toastId });
-  } catch (error) {
-    console.error('❌ Erro ao exportar relatório:', error);
-    toast.error('Erro ao gerar relatório');
-  }
-};
+  };
 
 
   // ============================================

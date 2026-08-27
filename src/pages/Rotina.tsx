@@ -382,7 +382,7 @@ export default function Rotina() {
   // ============================================
 
   const exportarRelatorio = async (formato: 'csv' | 'excel' | 'pdf') => {
-    console.log(`🔘 Botão ${formato.toUpperCase()} clicado - ROTINA`);
+    console.log(`🔘 Botão ${formato.toUpperCase()} clicado`);
     try {
       const toastId = toast.loading(`Gerando relatório ${formato.toUpperCase()}...`);
       const token = localStorage.getItem('token');
@@ -392,16 +392,21 @@ export default function Rotina() {
         return;
       }
 
-      let url = `https://backend-controle-tratamento.onrender.com/api/relatorios/rotina/${formato}`;
+      const url = `https://backend-controle-tratamento.onrender.com/api/relatorios/rede-basica/${formato}`;
       let acceptHeader = '';
 
-      // Fallback: Se for PDF ou Excel, usar CSV (já que as rotas não existem)
-      if (formato === 'pdf' || formato === 'excel') {
-        toast.error(`${formato.toUpperCase()} para Rotina ainda não disponível. Baixando CSV...`, { id: toastId });
-        url = `https://backend-controle-tratamento.onrender.com/api/relatorios/rotina/csv`;
-        acceptHeader = 'text/csv';
-      } else {
-        acceptHeader = 'text/csv';
+      switch (formato) {
+        case 'csv':
+          acceptHeader = 'text/csv';
+          break;
+        case 'excel':
+          acceptHeader = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+          break;
+        case 'pdf':
+          acceptHeader = 'application/pdf';
+          break;
+        default:
+          return;
       }
 
       // Adicionar filtros à URL
@@ -439,18 +444,18 @@ export default function Rotina() {
         return;
       }
 
+      // 🔥 PARTE QUE FALTAVA - DOWNLOAD
       const downloadUrl = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = downloadUrl;
-      const extensao = (formato === 'pdf' || formato === 'excel') ? 'csv' : formato;
-      link.download = `relatorio_rotina.${extensao}`;
+      const extensao = formato === 'excel' ? 'xlsx' : formato;
+      link.download = `relatorio_rede_basica.${extensao}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(downloadUrl);
 
-      const nomeFormato = (formato === 'pdf' || formato === 'excel') ? 'CSV (fallback)' : formato.toUpperCase();
-      toast.success(`Relatório ${nomeFormato} gerado com sucesso!`, { id: toastId });
+      toast.success(`Relatório ${formato.toUpperCase()} gerado com sucesso!`, { id: toastId });
     } catch (error) {
       console.error('❌ Erro ao exportar relatório:', error);
       toast.error('Erro ao gerar relatório');
