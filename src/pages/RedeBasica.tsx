@@ -354,6 +354,10 @@ export default function RedeBasica() {
   // EXPORTAR RELATÓRIOS
   // ============================================
 
+  // ============================================
+  // EXPORTAR RELATÓRIOS - REDE BÁSICA (CORRIGIDO)
+  // ============================================
+
   const exportarRelatorio = async (formato: 'csv' | 'excel' | 'pdf') => {
     try {
       const toastId = toast.loading(`Gerando relatório ${formato.toUpperCase()}...`);

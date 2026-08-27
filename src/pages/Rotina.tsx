@@ -396,9 +396,13 @@ export default function Rotina() {
           blob = await relatorioApi.rotinaCSV(filtrosExportacao);
           break;
         case 'excel':
+          // ⚠️ Backend não tem rota para Excel de Rotina ainda
+          toast.error('Excel para Rotina ainda não disponível. Baixando CSV...', { id: toastId });
           blob = await relatorioApi.rotinaCSV(filtrosExportacao);
           break;
         case 'pdf':
+          // ⚠️ Backend não tem rota para PDF de Rotina ainda
+          toast.error('PDF para Rotina ainda não disponível. Baixando CSV...', { id: toastId });
           blob = await relatorioApi.rotinaCSV(filtrosExportacao);
           break;
         default:
