@@ -5,12 +5,11 @@ import {
   Building2,
   Users,
   ClipboardList,
-  FileText,
   Settings,
   Activity,
   UserCog
 } from 'lucide-react';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../hooks/useAuth'
 
 interface SidebarProps {
   isOpen: boolean;
@@ -26,16 +25,17 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     { path: '/rede-basica', icon: Users, label: 'Rede Básica' },
     { path: '/localidades', icon: MapPin, label: 'Localidades' },
     { path: '/psf', icon: Building2, label: 'PSFs' },
-    { path: '/relatorios', icon: FileText, label: 'Relatórios' },
     { path: '/configuracoes', icon: Settings, label: 'Configurações' },
   ];
 
+  // Adiciona Usuários apenas se for admin
   if (user?.perfil === 'admin') {
-    menuItems.splice(6, 0, { path: '/usuarios', icon: UserCog, label: 'Usuários' });
+    menuItems.splice(5, 0, { path: '/usuarios', icon: UserCog, label: 'Usuários' });
   }
 
   return (
     <>
+      {/* Overlay para mobile */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 lg:hidden"
@@ -43,6 +43,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         />
       )}
 
+      {/* Sidebar */}
       <aside
         className={`
           fixed top-0 left-0 h-full w-[260px] bg-white border-r border-slate-200/60 z-50
@@ -90,7 +91,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             </div>
           </nav>
 
-          {/* Rodapé - SEM BOTÃO SAIR */}
+          {/* Rodapé */}
           <div className="border-t border-slate-200/60 p-3">
             <div className="text-center text-[10px] text-slate-400">
               v1.0.0 • {new Date().getFullYear()}

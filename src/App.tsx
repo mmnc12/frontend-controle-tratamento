@@ -12,7 +12,6 @@ import Localidades from './pages/Localidades';
 import PSFs from './pages/PSFs';
 import RedeBasica from './pages/RedeBasica';
 import Rotina from './pages/Rotina';
-import Relatorios from './pages/Relatorios';
 import Configuracoes from './pages/Configuracoes';
 import Usuarios from './pages/Usuarios';
 
@@ -24,7 +23,7 @@ import TesteDownload from './pages/TesteDownload';
 
 const PageTitle = () => {
   const location = useLocation();
-  
+
   useEffect(() => {
     const titles: Record<string, string> = {
       '/': 'Login',
@@ -33,15 +32,14 @@ const PageTitle = () => {
       '/psf': 'PSFs - Controle de Tratamento',
       '/rede-basica': 'Rede Básica - Controle de Tratamento',
       '/rotina': 'Rotina - Controle de Tratamento',
-      '/relatorios': 'Relatórios - Controle de Tratamento',
       '/configuracoes': 'Configurações - Controle de Tratamento',
       '/usuarios': 'Usuários - Controle de Tratamento',
     };
-    
+
     const title = titles[location.pathname] || 'Controle de Tratamento';
     document.title = title;
   }, [location]);
-  
+
   return null;
 };
 
@@ -60,14 +58,14 @@ const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  return isAuthenticated ? children : <Navigate to="/" replace />;
+  return isAuthenticated ? <>{children}</> : <Navigate to="/" replace />;
 };
 
 // ============================================
 // COMPONENTE PRINCIPAL
 // ============================================
 
-function AppRoutes() {
+const AppRoutes = () => {
   const { isAuthenticated } = useAuth();
 
   return (
@@ -124,16 +122,6 @@ function AppRoutes() {
         }
       />
       <Route
-        path="/relatorios"
-        element={
-          <PrivateRoute>
-            <Layout>
-              <Relatorios />
-            </Layout>
-          </PrivateRoute>
-        }
-      />
-      <Route
         path="/configuracoes"
         element={
           <PrivateRoute>
@@ -156,13 +144,13 @@ function AppRoutes() {
       <Route path="/teste" element={<TesteDownload />} />
     </Routes>
   );
-}
+};
 
 // ============================================
 // APP
 // ============================================
 
-function App() {
+const App = () => {
   return (
     <BrowserRouter>
       <AuthProvider>
@@ -184,6 +172,6 @@ function App() {
       </AuthProvider>
     </BrowserRouter>
   );
-}
+};
 
 export default App;

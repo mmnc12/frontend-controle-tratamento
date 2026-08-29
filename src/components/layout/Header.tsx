@@ -29,20 +29,16 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
   const [pacientesRotina, setPacientesRotina] = useState<Rotina[]>([]);
   const isFirstRender = useRef(true);
 
-  // ============================================
-  // CARREGAR DADOS PARA NOTIFICAÇÕES
-  // ============================================
-
   const loadData = useCallback(async () => {
     try {
       const [redeResponse, rotinaResponse] = await Promise.all([
         redeBasicaApi.listar({}, 1, 1000),
         rotinaApi.listar({}, 1, 1000)
       ]);
-      setPacientesRede(redeResponse.data);
-      setPacientesRotina(rotinaResponse.data);
+      setPacientesRede(redeResponse.data || []);
+      setPacientesRotina(rotinaResponse.data || []);
     } catch {
-      // Silencioso - não mostra toast para não incomodar
+      // Silencioso
     }
   }, []);
 
@@ -55,10 +51,6 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
     return () => clearInterval(interval);
   }, [loadData]);
 
-  // ============================================
-  // CALCULAR REVISÕES ATRASADAS
-  // ============================================
-
   const todosPacientes = [...pacientesRede, ...pacientesRotina];
 
   const revisoesAtrasadas = todosPacientes.filter(p => {
@@ -70,10 +62,6 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
     dataRevisao.setHours(0, 0, 0, 0);
     return dataRevisao < hoje;
   });
-
-  // ============================================
-  // HANDLERS
-  // ============================================
 
   const handleLogout = () => {
     logout();
@@ -104,14 +92,9 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
-  // ============================================
-  // RENDER
-  // ============================================
-
   return (
     <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/50 sticky top-0 z-50">
       <div className="flex items-center justify-between px-4 py-3">
-        {/* Lado esquerdo */}
         <div className="flex items-center gap-3">
           <button
             onClick={onMenuClick}
@@ -123,13 +106,11 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
               <Menu className="w-5 h-5 text-slate-600" />
             )}
           </button>
-
           <h1 className="text-lg font-semibold text-slate-800 hidden sm:block">
             {getPageTitle()}
           </h1>
         </div>
 
-        {/* Lado direito */}
         <div className="flex items-center gap-3">
           {/* Notificações */}
           <div className="relative">
@@ -158,7 +139,6 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
                     {revisoesAtrasadas.length} paciente(s)
                   </span>
                 </div>
-
                 {revisoesAtrasadas.length > 0 ? (
                   <div>
                     {revisoesAtrasadas.slice(0, 10).map((p, index) => (
@@ -198,7 +178,6 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
                     <p className="text-xs text-slate-400">Todas as revisões estão em dia</p>
                   </div>
                 )}
-
                 {revisoesAtrasadas.length > 0 && (
                   <div className="px-4 py-2 border-t border-slate-100">
                     <button
@@ -216,7 +195,7 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
             )}
           </div>
 
-          {/* ✅ BOTÃO SAIR NO HEADER (DESKTOP E MOBILE) */}
+          {/* Botão Sair no Header */}
           <button
             onClick={handleLogout}
             className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 rounded-lg transition-colors"
