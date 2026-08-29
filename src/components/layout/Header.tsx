@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { 
-  Menu, 
-  X, 
-  LogOut, 
+import {
+  Menu,
+  X,
+  LogOut,
   ChevronDown,
   Bell,
   Settings,
@@ -51,7 +51,6 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
       isFirstRender.current = false;
       loadData();
     }
-    // Recarregar a cada 5 minutos
     const interval = setInterval(loadData, 300000);
     return () => clearInterval(interval);
   }, [loadData]);
@@ -61,7 +60,7 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
   // ============================================
 
   const todosPacientes = [...pacientesRede, ...pacientesRotina];
-  
+
   const revisoesAtrasadas = todosPacientes.filter(p => {
     if (p.revisao === 'S') return false;
     if (!p.data_revisao) return false;
@@ -96,7 +95,6 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
     return titles[path] || 'Sistema';
   };
 
-  // Fechar dropdowns ao clicar fora
   useEffect(() => {
     const handleClickOutside = () => {
       setShowDropdown(false);
@@ -133,7 +131,7 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
 
         {/* Lado direito */}
         <div className="flex items-center gap-3">
-          {/* Notificações - Revisões Atrasadas */}
+          {/* Notificações */}
           <div className="relative">
             <button
               onClick={(e) => {
@@ -150,7 +148,6 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
               )}
             </button>
 
-            {/* Dropdown de notificações */}
             {showNotifications && (
               <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-slate-200/50 py-2 z-50 max-h-96 overflow-y-auto">
                 <div className="px-4 py-2 border-b border-slate-100 flex items-center justify-between">
@@ -219,6 +216,15 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
             )}
           </div>
 
+          {/* ✅ BOTÃO SAIR NO HEADER (DESKTOP E MOBILE) */}
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+            <span className="hidden sm:inline">Sair</span>
+          </button>
+
           {/* Perfil do usuário */}
           <div className="relative">
             <button
@@ -237,15 +243,14 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
               <ChevronDown className="w-4 h-4 text-slate-400" />
             </button>
 
-            {/* Dropdown do perfil */}
             {showDropdown && (
               <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-slate-200/50 py-1 z-50 overflow-hidden">
                 <div className="px-4 py-3 border-b border-slate-100">
                   <p className="text-sm font-semibold text-slate-800">{user?.nome}</p>
                   <p className="text-xs text-slate-500 truncate">{user?.email}</p>
                   <span className="inline-block mt-1.5 text-[10px] px-2.5 py-0.5 rounded-full bg-primary-100 text-primary-700 font-medium">
-                    {user?.perfil === 'admin' ? 'Administrador' : 
-                     user?.perfil === 'usuario' ? 'Usuário' : 'Visualizador'}
+                    {user?.perfil === 'admin' ? 'Administrador' :
+                      user?.perfil === 'usuario' ? 'Usuário' : 'Visualizador'}
                   </span>
                 </div>
                 <button

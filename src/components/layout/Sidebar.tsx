@@ -7,7 +7,6 @@ import {
   ClipboardList,
   FileText,
   Settings,
-  LogOut,
   Activity,
   UserCog
 } from 'lucide-react';
@@ -19,7 +18,7 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
   const menuItems = [
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -31,19 +30,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     { path: '/configuracoes', icon: Settings, label: 'Configurações' },
   ];
 
-  // Adicionar Usuários apenas se for admin
   if (user?.perfil === 'admin') {
     menuItems.splice(6, 0, { path: '/usuarios', icon: UserCog, label: 'Usuários' });
   }
 
-  const handleLogout = () => {
-    logout();
-    onClose();
-  };
-
   return (
     <>
-      {/* Overlay para mobile */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 lg:hidden"
@@ -51,7 +43,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         />
       )}
 
-      {/* Sidebar - fixed */}
       <aside
         className={`
           fixed top-0 left-0 h-full w-[260px] bg-white border-r border-slate-200/60 z-50
@@ -99,16 +90,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             </div>
           </nav>
 
-          {/* Rodapé */}
+          {/* Rodapé - SEM BOTÃO SAIR */}
           <div className="border-t border-slate-200/60 p-3">
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-rose-600 hover:bg-rose-50 transition-colors"
-            >
-              <LogOut className="w-5 h-5" />
-              <span className="text-sm font-medium">Sair</span>
-            </button>
-            <div className="mt-3 text-center text-[10px] text-slate-400">
+            <div className="text-center text-[10px] text-slate-400">
               v1.0.0 • {new Date().getFullYear()}
             </div>
           </div>
