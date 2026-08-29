@@ -45,11 +45,45 @@ export default function Login() {
       await login({ email: emailTrim, senha: senhaTrim });
       navigate('/dashboard');
     } catch {
-      // Erro já tratado no contexto - NÃO FAZER NADA AQUI
-      // O toast de erro já foi mostrado no AuthContext com duração de 6 segundos
+      // ============================================
+      // 🔥 LIMPAR OS CAMPOS EM CASO DE ERRO
+      // ============================================
+      setFormData({
+        email: '',
+        senha: ''
+      });
+
+      // Focar no campo de email para nova tentativa
+      setTimeout(() => {
+        const emailInput = document.querySelector('input[type="email"]') as HTMLInputElement;
+        if (emailInput) {
+          emailInput.focus();
+        }
+      }, 100);
     } finally {
       setLoading(false);
     }
+  };
+
+  // ============================================
+  // 🔥 FUNÇÃO PARA LIMPAR OS CAMPOS MANUALMENTE
+  // ============================================
+
+  const limparCampos = () => {
+    setFormData({
+      email: '',
+      senha: ''
+    });
+    // 🔥 CORRIGIDO: toast.info não existe, usar toast.success ou toast.custom
+    toast.success('Campos limpos!', { duration: 2000, icon: '🧹' });
+
+    // Focar no campo de email
+    setTimeout(() => {
+      const emailInput = document.querySelector('input[type="email"]') as HTMLInputElement;
+      if (emailInput) {
+        emailInput.focus();
+      }
+    }, 100);
   };
 
   return (
@@ -120,7 +154,18 @@ export default function Login() {
             </button>
           </form>
 
-          <div className="mt-6 text-center text-xs text-slate-400 border-t border-slate-200/60 pt-4">
+          {/* 🔥 BOTÃO PARA LIMPAR CAMPOS */}
+          <div className="mt-4 flex justify-center">
+            <button
+              type="button"
+              onClick={limparCampos}
+              className="text-xs text-slate-400 hover:text-primary-600 transition-colors"
+            >
+              Limpar campos
+            </button>
+          </div>
+
+          <div className="mt-4 text-center text-xs text-slate-400 border-t border-slate-200/60 pt-4">
             Sistema de Controle de Tratamento • {new Date().getFullYear()}
           </div>
         </div>
