@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
   Users,
   CheckCircle,
@@ -9,18 +8,18 @@ import {
   Activity
 } from 'lucide-react';
 import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
   BarChart,
   Bar,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer,
   PieChart,
   Pie,
   Cell,
-  LineChart,
-  Line,
   Legend,
   TooltipProps
 } from 'recharts';
@@ -39,7 +38,23 @@ const CHART_COLORS = {
 
 const PIE_COLORS = [CHART_COLORS.primary, CHART_COLORS.success, CHART_COLORS.warning, CHART_COLORS.danger];
 
-// ✅ CUSTOM TOOLTIP
+// ✅ TIPOS PARA OS DADOS
+interface DadoEvolucao {
+  mes: string;
+  quantidade: number;
+}
+
+interface DadoLocalidade {
+  nome: string;
+  quantidade: number;
+}
+
+interface DadoStatus {
+  name: string;
+  value: number;
+}
+
+// ✅ CUSTOM TOOLTIP COM TIPAGEM CORRETA
 interface CustomTooltipProps extends TooltipProps<number, string> {
   active?: boolean;
   payload?: Array<{
@@ -56,7 +71,7 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
       <div className="bg-white dark:bg-slate-800 p-3 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700">
         <p className="text-sm font-medium text-slate-800 dark:text-white">{label}</p>
         <p className="text-sm text-primary-600 dark:text-primary-400">
-          {payload[0].value} pacientes
+          {payload[0]?.value || 0} pacientes
         </p>
       </div>
     );
@@ -64,7 +79,7 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   return null;
 };
 
-// ✅ RENDER PIE LABEL
+// ✅ PIE LABEL COM TIPAGEM CORRETA
 interface PieLabelProps {
   name?: string;
   percent?: number;
@@ -75,36 +90,50 @@ const renderPieLabel = ({ name, percent }: PieLabelProps) => {
   return `${name}: ${(percent * 100).toFixed(0)}%`;
 };
 
+// ✅ DADOS DE EXEMPLO COM TIPAGEM
+const dadosExemplo: {
+  evolucao: DadoEvolucao[];
+  localidades: DadoLocalidade[];
+  status: DadoStatus[];
+  revisoes: DadoStatus[];
+} = {
+  evolucao: [
+    { mes: 'Jan', quantidade: 5 },
+    { mes: 'Fev', quantidade: 8 },
+    { mes: 'Mar', quantidade: 12 },
+    { mes: 'Abr', quantidade: 10 },
+    { mes: 'Mai', quantidade: 15 },
+    { mes: 'Jun', quantidade: 18 },
+  ],
+  localidades: [
+    { nome: 'Serra da Carnaiba', quantidade: 25 },
+    { nome: 'Bananeiras', quantidade: 18 },
+    { nome: 'Várzea Grande', quantidade: 12 },
+    { nome: 'Lajinha', quantidade: 8 },
+    { nome: 'Cajueiro', quantidade: 5 },
+  ],
+  status: [
+    { name: 'Tratados', value: 90 },
+    { name: 'Pendentes', value: 3 },
+  ],
+  revisoes: [
+    { name: 'Feitas', value: 69 },
+    { name: 'Pendentes', value: 24 },
+  ],
+};
+
+// ✅ INTERFACE DOS CARDS
+interface StatCard {
+  titulo: string;
+  valor: number;
+  icone: React.FC<{ className?: string }>;
+  cor: string;
+  bg: string;
+  descricao: string;
+  detalhe: string;
+}
+
 export default function Dashboard() {
-  const [loading] = useState(false);
-
-  // ✅ DADOS DE EXEMPLO (temporários)
-  const dadosExemplo = {
-    evolucao: [
-      { mes: 'Jan', quantidade: 5 },
-      { mes: 'Fev', quantidade: 8 },
-      { mes: 'Mar', quantidade: 12 },
-      { mes: 'Abr', quantidade: 10 },
-      { mes: 'Mai', quantidade: 15 },
-      { mes: 'Jun', quantidade: 18 },
-    ],
-    localidades: [
-      { nome: 'Serra da Carnaiba', quantidade: 25 },
-      { nome: 'Bananeiras', quantidade: 18 },
-      { nome: 'Várzea Grande', quantidade: 12 },
-      { nome: 'Lajinha', quantidade: 8 },
-      { nome: 'Cajueiro', quantidade: 5 },
-    ],
-    status: [
-      { name: 'Tratados', value: 90 },
-      { name: 'Pendentes', value: 3 },
-    ],
-    revisoes: [
-      { name: 'Feitas', value: 69 },
-      { name: 'Pendentes', value: 24 },
-    ],
-  };
-
   const stats = {
     totalPacientes: 93,
     tratados: 90,
@@ -112,7 +141,7 @@ export default function Dashboard() {
     revisoesFeitas: 69,
   };
 
-  const statsCards = [
+  const statsCards: StatCard[] = [
     {
       titulo: 'Total de Pacientes',
       valor: stats.totalPacientes,
@@ -150,14 +179,6 @@ export default function Dashboard() {
       detalhe: `↗︎ ${((stats.revisoesFeitas / stats.totalPacientes) * 100).toFixed(1)}% do total`
     }
   ];
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -205,8 +226,8 @@ export default function Dashboard() {
             <TrendingUp className="w-5 h-5 text-primary-500" />
             Evolução de Pacientes
           </h3>
-          <div className="w-full h-[250px]">
-            <ResponsiveContainer width="100%" height="100%">
+          <div style={{ width: '100%', height: 250 }}>
+            <ResponsiveContainer>
               <LineChart data={dadosExemplo.evolucao}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis dataKey="mes" />
@@ -231,8 +252,8 @@ export default function Dashboard() {
             <MapPin className="w-5 h-5 text-primary-500" />
             Pacientes por Localidade
           </h3>
-          <div className="w-full h-[250px]">
-            <ResponsiveContainer width="100%" height="100%">
+          <div style={{ width: '100%', height: 250 }}>
+            <ResponsiveContainer>
               <BarChart data={dadosExemplo.localidades} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
                 <XAxis type="number" allowDecimals={false} />
@@ -262,8 +283,8 @@ export default function Dashboard() {
           <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">
             Status de Tratamento
           </h3>
-          <div className="w-full h-[250px]">
-            <ResponsiveContainer width="100%" height="100%">
+          <div style={{ width: '100%', height: 250 }}>
+            <ResponsiveContainer>
               <PieChart>
                 <Pie
                   data={dadosExemplo.status}
@@ -291,8 +312,8 @@ export default function Dashboard() {
           <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">
             Status de Revisões
           </h3>
-          <div className="w-full h-[250px]">
-            <ResponsiveContainer width="100%" height="100%">
+          <div style={{ width: '100%', height: 250 }}>
+            <ResponsiveContainer>
               <PieChart>
                 <Pie
                   data={dadosExemplo.revisoes}
@@ -313,89 +334,6 @@ export default function Dashboard() {
               </PieChart>
             </ResponsiveContainer>
           </div>
-        </div>
-      </div>
-
-      {/* Últimos Pacientes */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-700 p-5">
-        <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
-          <Users className="w-5 h-5 text-primary-500" />
-          Últimos Pacientes
-        </h3>
-        <div className="overflow-x-auto">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Paciente</th>
-                <th>Localidade</th>
-                <th>Data</th>
-                <th>Status</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td className="font-medium text-slate-800 dark:text-white">Ysla Vitória dos Santos</td>
-                <td className="text-slate-600 dark:text-slate-300">Serra da Carnaiba</td>
-                <td className="text-slate-600 dark:text-slate-300">09/10/2025</td>
-                <td><span className="badge badge-success">Tratado</span></td>
-                <td>
-                  <button className="text-primary-600 hover:text-primary-800 text-sm font-medium">
-                    Visualizar
-                  </button>
-                </td>
-              </tr>
-              <tr>
-                <td className="font-medium text-slate-800 dark:text-white">Siélio Pereira dos Santos</td>
-                <td className="text-slate-600 dark:text-slate-300">Serra da Carnaiba</td>
-                <td className="text-slate-600 dark:text-slate-300">20/10/2025</td>
-                <td><span className="badge badge-success">Tratado</span></td>
-                <td>
-                  <button className="text-primary-600 hover:text-primary-800 text-sm font-medium">
-                    Visualizar
-                  </button>
-                </td>
-              </tr>
-              <tr>
-                <td className="font-medium text-slate-800 dark:text-white">Reinaldo Soares Santos</td>
-                <td className="text-slate-600 dark:text-slate-300">Serra da Carnaiba</td>
-                <td className="text-slate-600 dark:text-slate-300">-</td>
-                <td><span className="badge badge-warning">Pendente</span></td>
-                <td>
-                  <button className="text-primary-600 hover:text-primary-800 text-sm font-medium">
-                    Visualizar
-                  </button>
-                </td>
-              </tr>
-              <tr>
-                <td className="font-medium text-slate-800 dark:text-white">Raulino Alvino</td>
-                <td className="text-slate-600 dark:text-slate-300">Serra da Carnaiba</td>
-                <td className="text-slate-600 dark:text-slate-300">20/10/2025</td>
-                <td><span className="badge badge-success">Tratado</span></td>
-                <td>
-                  <button className="text-primary-600 hover:text-primary-800 text-sm font-medium">
-                    Visualizar
-                  </button>
-                </td>
-              </tr>
-              <tr>
-                <td className="font-medium text-slate-800 dark:text-white">Natália Almeida Nascimento</td>
-                <td className="text-slate-600 dark:text-slate-300">Serra da Carnaiba</td>
-                <td className="text-slate-600 dark:text-slate-300">-</td>
-                <td><span className="badge badge-success">Tratado</span></td>
-                <td>
-                  <button className="text-primary-600 hover:text-primary-800 text-sm font-medium">
-                    Visualizar
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div className="mt-4 text-right">
-          <button className="text-primary-600 hover:text-primary-700 text-sm font-medium">
-            Ver todos →
-          </button>
         </div>
       </div>
     </div>
