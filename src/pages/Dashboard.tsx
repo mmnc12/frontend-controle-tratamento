@@ -25,7 +25,7 @@ import {
   TooltipProps
 } from 'recharts';
 
-// 🆕 Cores dos gráficos
+// ✅ CORES DOS GRÁFICOS
 const CHART_COLORS = {
   primary: '#3b82f6',
   success: '#22c55e',
@@ -39,7 +39,7 @@ const CHART_COLORS = {
 
 const PIE_COLORS = [CHART_COLORS.primary, CHART_COLORS.success, CHART_COLORS.warning, CHART_COLORS.danger];
 
-// ✅ CUSTOM TOOLTIP - MOVIDO PARA FORA DO COMPONENTE
+// ✅ CUSTOM TOOLTIP
 interface CustomTooltipProps extends TooltipProps<number, string> {
   active?: boolean;
   payload?: Array<{
@@ -64,7 +64,7 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   return null;
 };
 
-// ✅ RENDER PIE LABEL - MOVIDO PARA FORA DO COMPONENTE
+// ✅ RENDER PIE LABEL
 interface PieLabelProps {
   name?: string;
   percent?: number;
@@ -75,41 +75,42 @@ const renderPieLabel = ({ name, percent }: PieLabelProps) => {
   return `${name}: ${(percent * 100).toFixed(0)}%`;
 };
 
-// ✅ Dados de exemplo para os gráficos
-const dadosExemplo = {
-  evolucao: [
-    { mes: 'Jan', quantidade: 5 },
-    { mes: 'Fev', quantidade: 8 },
-    { mes: 'Mar', quantidade: 12 },
-    { mes: 'Abr', quantidade: 10 },
-    { mes: 'Mai', quantidade: 15 },
-    { mes: 'Jun', quantidade: 18 },
-  ],
-  localidades: [
-    { nome: 'Serra da Carnaiba', quantidade: 25 },
-    { nome: 'Bananeiras', quantidade: 18 },
-    { nome: 'Várzea Grande', quantidade: 12 },
-    { nome: 'Lajinha', quantidade: 8 },
-    { nome: 'Cajueiro', quantidade: 5 },
-  ],
-  status: [
-    { name: 'Tratados', value: 90 },
-    { name: 'Pendentes', value: 3 },
-  ],
-  revisoes: [
-    { name: 'Feitas', value: 69 },
-    { name: 'Pendentes', value: 24 },
-  ],
-};
-
 export default function Dashboard() {
   const [loading] = useState(false);
-  const [stats] = useState({
+
+  // ✅ DADOS DE EXEMPLO (temporários)
+  const dadosExemplo = {
+    evolucao: [
+      { mes: 'Jan', quantidade: 5 },
+      { mes: 'Fev', quantidade: 8 },
+      { mes: 'Mar', quantidade: 12 },
+      { mes: 'Abr', quantidade: 10 },
+      { mes: 'Mai', quantidade: 15 },
+      { mes: 'Jun', quantidade: 18 },
+    ],
+    localidades: [
+      { nome: 'Serra da Carnaiba', quantidade: 25 },
+      { nome: 'Bananeiras', quantidade: 18 },
+      { nome: 'Várzea Grande', quantidade: 12 },
+      { nome: 'Lajinha', quantidade: 8 },
+      { nome: 'Cajueiro', quantidade: 5 },
+    ],
+    status: [
+      { name: 'Tratados', value: 90 },
+      { name: 'Pendentes', value: 3 },
+    ],
+    revisoes: [
+      { name: 'Feitas', value: 69 },
+      { name: 'Pendentes', value: 24 },
+    ],
+  };
+
+  const stats = {
     totalPacientes: 93,
     tratados: 90,
     pendentes: 3,
     revisoesFeitas: 69,
-  });
+  };
 
   const statsCards = [
     {
@@ -193,102 +194,125 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Gráficos */}
+      {/* ============================================
+          GRÁFICOS
+          ============================================ */}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Evolução Mensal */}
+        {/* Gráfico 1: Evolução de Pacientes */}
         <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-700 p-5">
           <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-primary-500" />
             Evolução de Pacientes
           </h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={dadosExemplo.evolucao}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              <XAxis dataKey="mes" />
-              <YAxis allowDecimals={false} />
-              <Tooltip content={<CustomTooltip />} />
-              <Line
-                type="monotone"
-                dataKey="quantidade"
-                stroke={CHART_COLORS.primary}
-                strokeWidth={3}
-                dot={{ fill: CHART_COLORS.primary, r: 5 }}
-                activeDot={{ r: 8 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          <div className="w-full h-[250px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={dadosExemplo.evolucao}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis dataKey="mes" />
+                <YAxis allowDecimals={false} />
+                <Tooltip content={<CustomTooltip />} />
+                <Line
+                  type="monotone"
+                  dataKey="quantidade"
+                  stroke={CHART_COLORS.primary}
+                  strokeWidth={3}
+                  dot={{ fill: CHART_COLORS.primary, r: 5 }}
+                  activeDot={{ r: 8 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
-        {/* Pacientes por Localidade */}
+        {/* Gráfico 2: Pacientes por Localidade */}
         <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-700 p-5">
           <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
             <MapPin className="w-5 h-5 text-primary-500" />
             Pacientes por Localidade
           </h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={dadosExemplo.localidades} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
-              <XAxis type="number" allowDecimals={false} />
-              <YAxis type="category" dataKey="nome" tick={{ fontSize: 11 }} width={100} />
-              <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="quantidade" fill={CHART_COLORS.primary} radius={[0, 4, 4, 0]} barSize={20} />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="w-full h-[250px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={dadosExemplo.localidades} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
+                <XAxis type="number" allowDecimals={false} />
+                <YAxis
+                  type="category"
+                  dataKey="nome"
+                  tick={{ fontSize: 11 }}
+                  width={120}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar
+                  dataKey="quantidade"
+                  fill={CHART_COLORS.primary}
+                  radius={[0, 4, 4, 0]}
+                  barSize={20}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
 
       {/* Gráficos de Status e Revisões */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Gráfico 3: Status de Tratamento */}
         <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-700 p-5">
           <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">
             Status de Tratamento
           </h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <PieChart>
-              <Pie
-                data={dadosExemplo.status}
-                dataKey="value"
-                nameKey="name"
-                cx="50%"
-                cy="50%"
-                outerRadius={90}
-                label={renderPieLabel}
-                labelLine={true}
-              >
-                {dadosExemplo.status.map((_entry, index) => (
-                  <Cell key={`cell-${index}`} fill={PIE_COLORS[index]} />
-                ))}
-              </Pie>
-              <Tooltip content={<CustomTooltip />} />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
+          <div className="w-full h-[250px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={dadosExemplo.status}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={90}
+                  label={renderPieLabel}
+                  labelLine={true}
+                >
+                  {dadosExemplo.status.map((_entry, index) => (
+                    <Cell key={`cell-${index}`} fill={PIE_COLORS[index]} />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomTooltip />} />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
+        {/* Gráfico 4: Status de Revisões */}
         <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-700 p-5">
           <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">
             Status de Revisões
           </h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <PieChart>
-              <Pie
-                data={dadosExemplo.revisoes}
-                dataKey="value"
-                nameKey="name"
-                cx="50%"
-                cy="50%"
-                outerRadius={90}
-                label={renderPieLabel}
-                labelLine={true}
-              >
-                {dadosExemplo.revisoes.map((_entry, index) => (
-                  <Cell key={`cell-${index}`} fill={PIE_COLORS[index + 2]} />
-                ))}
-              </Pie>
-              <Tooltip content={<CustomTooltip />} />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
+          <div className="w-full h-[250px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={dadosExemplo.revisoes}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={90}
+                  label={renderPieLabel}
+                  labelLine={true}
+                >
+                  {dadosExemplo.revisoes.map((_entry, index) => (
+                    <Cell key={`cell-${index}`} fill={PIE_COLORS[index + 2]} />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomTooltip />} />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
 
