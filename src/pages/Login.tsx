@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Activity, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import toast from 'react-hot-toast';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -17,8 +18,28 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
 
+    // ============================================
+    // 🔥 VALIDAÇÃO DOS CAMPOS VAZIOS
+    // ============================================
+
+    const emailTrim = formData.email.trim();
+    const senhaTrim = formData.senha.trim();
+
+    if (!emailTrim || !senhaTrim) {
+      toast.error('Preencha todos os campos para continuar', { duration: 4000 });
+      setLoading(false);
+      return;
+    }
+
+    // Validação simples de email
+    if (!emailTrim.includes('@') || !emailTrim.includes('.')) {
+      toast.error('Digite um e-mail válido', { duration: 4000 });
+      setLoading(false);
+      return;
+    }
+
     try {
-      await login(formData);
+      await login({ email: emailTrim, senha: senhaTrim });
       navigate('/dashboard');
     } catch {
       // Erro já tratado no contexto
@@ -54,7 +75,6 @@ export default function Login() {
                   placeholder="seu@email.com"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  required
                 />
               </div>
             </div>
@@ -69,7 +89,6 @@ export default function Login() {
                   placeholder="••••••••"
                   value={formData.senha}
                   onChange={(e) => setFormData({ ...formData, senha: e.target.value })}
-                  required
                 />
                 <button
                   type="button"

@@ -15,6 +15,7 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
     const [user, setUser] = useState<Usuario | null>(null);
     const [loading, setLoading] = useState(true);
+    const [toastId, setToastId] = useState<string | null>(null);
 
     // ============================================
     // VERIFICAR USUÁRIO LOGADO AO INICIAR
@@ -54,11 +55,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
             localStorage.setItem('usuario', JSON.stringify(usuario));
 
             setUser(usuario);
-            toast.success('Login realizado com sucesso!');
+            toast.success('Login realizado com sucesso!', { duration: 3000 });
         } catch (error) {
             const apiError = error as ApiError;
+
+            // 🔥 TOAST DE ERRO COM DURAÇÃO MAIS LONGA
+            // Se já tiver um toast de erro, remove e cria outro
+            if (toastId) {
+                toast.dismiss(toastId);
+            }
+
             const message = apiError.response?.data?.message || 'Erro ao fazer login';
-            toast.error(message);
+            const id = toast.error(message, { duration: 5000 });
+            setToastId(id);
+
             throw error;
         } finally {
             setLoading(false);
@@ -73,7 +83,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         localStorage.removeItem('token');
         localStorage.removeItem('usuario');
         setUser(null);
-        toast.success('Logout realizado com sucesso');
+        toast.success('Logout realizado com sucesso', { duration: 3000 });
     };
 
     // ============================================
