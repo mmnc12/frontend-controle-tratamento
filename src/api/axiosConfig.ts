@@ -36,10 +36,12 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
+    // 🔥 REMOVA O window.location.href = '/'
+    // Deixe apenas a limpeza do localStorage
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('usuario');
-      window.location.href = '/';
+      // ❌ window.location.href = '/';  // REMOVER ESTA LINHA
     }
     return Promise.reject(error);
   }
