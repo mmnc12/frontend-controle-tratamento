@@ -20,7 +20,6 @@ import {
     Clock,
     FileText,
     File as FilePdf,
-    Bug
 } from 'lucide-react';
 import { redeBasicaApi, rotinaApi, localidadeApi, psfApi } from '../api';
 import type { RedeBasica, Rotina, Localidade, PSF } from '../types';
@@ -34,7 +33,6 @@ export default function Relatorios() {
         csv: false,
         excel: false,
         pdf: false,
-        test: false,
     });
     const [pacientesRede, setPacientesRede] = useState<RedeBasica[]>([]);
     const [pacientesRotina, setPacientesRotina] = useState<Rotina[]>([]);
@@ -71,71 +69,11 @@ export default function Relatorios() {
     }, [loadData]);
 
     // ============================================
-    // BOTÃO DE TESTE ISOLADO
-    // ============================================
-
-    const handleTestDownload = async () => {
-        console.log('🚀🚀🚀 BOTÃO DE TESTE CLICADO! 🚀🚀🚀');
-        setDownloading(prev => ({ ...prev, test: true }));
-        try {
-            const token = localStorage.getItem('token');
-            console.log('📌 Token encontrado?', !!token);
-
-            if (!token) {
-                toast.error('Token não encontrado. Faça login novamente.');
-                return;
-            }
-
-            const response = await fetch('https://backend-controle-tratamento.onrender.com/api/relatorios/rede-basica/pdf?ano=2024', {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/pdf',
-                },
-            });
-
-            console.log('📌 Status da Resposta:', response.status);
-
-            if (!response.ok) {
-                const text = await response.text();
-                console.error('❌ Erro do servidor:', text);
-                toast.error(`Erro: ${response.status}`);
-                return;
-            }
-
-            const blob = await response.blob();
-            console.log('📌 Blob criado. Tamanho:', blob.size, 'bytes');
-
-            if (blob.size === 0) {
-                toast.error('Arquivo vazio');
-                return;
-            }
-
-            // 🔥 Força o download
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `teste-botao-${Date.now()}.pdf`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-
-            console.log('✅ DOWNLOAD INICIADO PELO BOTÃO DE TESTE!');
-            toast.success('Download do teste iniciado!');
-        } catch (error) {
-            console.error('❌ Erro no teste:', error);
-            toast.error('Erro no teste');
-        } finally {
-            setDownloading(prev => ({ ...prev, test: false }));
-        }
-    };
-
-    // ============================================
-    // FUNÇÕES DE DOWNLOAD ORIGINAIS (Simplificadas)
+    // FUNÇÕES DE DOWNLOAD
     // ============================================
 
     const downloadPDF = async () => {
-        console.log('🔘 PDF clicado (função original)');
+        console.log('🔘 PDF clicado');
         setDownloading(prev => ({ ...prev, pdf: true }));
         try {
             const token = localStorage.getItem('token');
@@ -181,7 +119,7 @@ export default function Relatorios() {
     };
 
     // ============================================
-    // CÁLCULO DE ESTATÍSTICAS (NÃO ALTERADO)
+    // CÁLCULO DE ESTATÍSTICAS
     // ============================================
     const todosPacientes = [...pacientesRede, ...pacientesRotina];
     const totalPacientes = todosPacientes.length;
@@ -248,21 +186,7 @@ export default function Relatorios() {
 
     return (
         <div className="space-y-6">
-            {/* 🔴🔴🔴 BOTÃO DE TESTE ISOLADO 🔴🔴🔴 */}
-            <div className="bg-red-50 border-2 border-red-500 rounded-xl p-4">
-                <h2 className="text-red-700 font-bold mb-2">🔴 TESTE DE DOWNLOAD</h2>
-                <p className="text-sm text-red-600 mb-3">Este botão é completamente independente. Clique e veja o console.</p>
-                <button
-                    onClick={handleTestDownload}
-                    disabled={downloading.test}
-                    className="flex items-center gap-2 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 text-lg font-bold"
-                >
-                    <Bug size={20} />
-                    {downloading.test ? 'Testando...' : '🔴 TESTAR DOWNLOAD ISOLADO'}
-                </button>
-            </div>
-
-            {/* Header com botões de download originais */}
+            {/* Header com botões de download */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-800">Relatórios</h1>
