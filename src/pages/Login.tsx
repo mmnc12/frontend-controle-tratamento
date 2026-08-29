@@ -16,10 +16,9 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
 
     // ============================================
-    // 🔥 VALIDAÇÃO DOS CAMPOS VAZIOS
+    // 🔥 VALIDAÇÃO DOS CAMPOS VAZIOS (ANTES DO LOADING)
     // ============================================
 
     const emailTrim = formData.email.trim();
@@ -27,22 +26,27 @@ export default function Login() {
 
     if (!emailTrim || !senhaTrim) {
       toast.error('Preencha todos os campos para continuar', { duration: 4000 });
-      setLoading(false);
       return;
     }
 
     // Validação simples de email
     if (!emailTrim.includes('@') || !emailTrim.includes('.')) {
       toast.error('Digite um e-mail válido', { duration: 4000 });
-      setLoading(false);
       return;
     }
+
+    // ============================================
+    // 🔥 SETAR LOADING APÓS VALIDAÇÃO
+    // ============================================
+
+    setLoading(true);
 
     try {
       await login({ email: emailTrim, senha: senhaTrim });
       navigate('/dashboard');
     } catch {
-      // Erro já tratado no contexto
+      // Erro já tratado no contexto - NÃO FAZER NADA AQUI
+      // O toast de erro já foi mostrado no AuthContext com duração de 6 segundos
     } finally {
       setLoading(false);
     }
