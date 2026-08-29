@@ -1,11 +1,6 @@
-## 📄 **README para o Frontend**
+# 🏥 Sistema de Controle de Tratamento - Frontend
 
-### **`frontend-controle-tratamento/README.md`**
-
-```markdown
-# 🖥️ Frontend - Sistema de Controle de Tratamento
-
-Aplicação web moderna para gerenciamento de pacientes com esquistossomose, desenvolvida com React + TypeScript + Tailwind CSS.
+Interface web para gerenciamento de pacientes com esquistossomose.
 
 ---
 
@@ -14,9 +9,9 @@ Aplicação web moderna para gerenciamento de pacientes com esquistossomose, des
 - [Tecnologias](#tecnologias)
 - [Funcionalidades](#funcionalidades)
 - [Como Rodar](#como-rodar)
-- [Estrutura do Projeto](#estrutura-do-projeto)
-- [Screenshots](#screenshots)
 - [Deploy](#deploy)
+- [Credenciais de Teste](#credenciais-de-teste)
+- [Estrutura do Projeto](#estrutura-do-projeto)
 - [Licença](#licença)
 
 ---
@@ -25,15 +20,15 @@ Aplicação web moderna para gerenciamento de pacientes com esquistossomose, des
 
 | Tecnologia | Versão | Descrição |
 |------------|--------|-----------|
-| React | v18 | Biblioteca UI |
+| React | v19 | Framework frontend |
 | TypeScript | v5 | Superset tipado do JavaScript |
-| Tailwind CSS | v3 | Framework CSS |
-| Vite | v5 | Build tool |
-| React Router DOM | v6 | Navegação |
-| Axios | - | HTTP Client |
-| Recharts | - | Gráficos |
-| React Hook Form | - | Formulários |
-| Lucide React | - | Ícones |
+| TailwindCSS | v3 | Framework CSS |
+| Vite | v8 | Build tool |
+| React Router | v7 | Roteamento |
+| React Hook Form | v7 | Gerenciamento de formulários |
+| Recharts | v3 | Gráficos |
+| Axios | v1 | Cliente HTTP |
+| Lucide React | v0.5 | Ícones |
 
 ---
 
@@ -41,52 +36,44 @@ Aplicação web moderna para gerenciamento de pacientes com esquistossomose, des
 
 ### 🔐 Autenticação
 - Login com JWT
+- Controle de perfil (admin, usuario, visualizador)
+- Logout
 - Proteção de rotas
-- Perfis: Admin, Usuário, Visualizador
+- Validação de campos no login
+- Toast com duração adequada (6 segundos para erros)
 
-### 📊 Dashboard
-- Estatísticas em tempo real
-- Cards com indicadores
+### 👥 Gestão de Pacientes
+- **Rede Básica**: CRUD completo
+- **Rotina**: CRUD completo
+- Filtros avançados (ano, localidade, PSF, nome, tratado)
+- Paginação (20 itens por página)
+- Busca em tempo real por nome
+- Validação de datas (não pode ser no futuro)
+- Cálculo automático de data de revisão (40 dias após tratamento)
+- Indicador visual de revisões atrasadas
+
+### 📍 Gestão de Cadastros
+- **Localidades**: CRUD completo
+- **PSFs**: CRUD completo
+- **Usuários**: CRUD completo (apenas admin)
+
+### 📊 Relatórios
+- Download em CSV
+- Download em Excel (XLSX)
+- Download em PDF
+- Filtros aplicáveis aos relatórios
+- Layout profissional
+
+### 📈 Dashboard
+- Cards com estatísticas em tempo real
+- Lista dos últimos pacientes cadastrados
 - Notificações de revisões atrasadas
-- Últimos pacientes cadastrados
-
-### 👥 Gestão de Usuários (Admin)
-- Listagem com busca
-- Criação, edição e exclusão
-- Controle de perfis e status
-
-### 📍 Localidades
-- CRUD completo
-- Busca por nome/código
-
-### 🏥 PSFs
-- CRUD completo
-- Busca por nome
-
-### 🩺 Rede Básica
-- CRUD completo
-- Filtros avançados
-- Busca em tempo real (debounce)
-- Paginação
-- Exportação (CSV, Excel, PDF)
-
-### 🔬 Rotina
-- CRUD completo
-- Filtros avançados
-- Busca em tempo real (debounce)
-- Paginação
-
-### 📈 Relatórios
-- Gráficos interativos
-- Estatísticas consolidadas
-
-### ⚙️ Configurações
-- Edição de perfil
-- Alteração de senha
+- Indicadores de progresso (percentuais)
 
 ### 🔔 Notificações
-- Revisões atrasadas
-- Badge no sininho
+- Alertas de revisões atrasadas
+- Indicador visual no ícone de sino
+- Lista de pacientes com revisão atrasada
 
 ---
 
@@ -101,7 +88,7 @@ Aplicação web moderna para gerenciamento de pacientes com esquistossomose, des
 
 ```bash
 # 1. Clonar o repositório
-git clone https://github.com/seu-usuario/frontend-controle-tratamento.git
+git clone https://github.com/mmnc12/frontend-controle-tratamento.git
 cd frontend-controle-tratamento
 
 # 2. Instalar dependências
@@ -109,7 +96,7 @@ npm install
 
 # 3. Configurar variáveis de ambiente
 cp .env.example .env
-# Edite o .env se necessário
+# Edite o arquivo .env com a URL da API
 
 # 4. Rodar em desenvolvimento
 npm run dev
@@ -117,85 +104,74 @@ npm run dev
 # 5. Build para produção
 npm run build
 npm run preview
-Variáveis de Ambiente
-env
-VITE_API_URL=http://localhost:3000/api
+🌐 Deploy
+Frontend (Vercel)
+URL: https://frontend-controle-tratamento.vercel.app
+
+Status: ✅ Produção
+
+Repositório: https://github.com/mmnc12/frontend-controle-tratamento
+
+Backend (Render)
+URL: https://backend-controle-tratamento.onrender.com
+
+Status: ✅ Produção
+
+🔐 Credenciais de Teste
+Perfil	E-mail	Senha
+Administrador	admin@sistema.com	admin123
+Usuário	usuario@sistema.com	admin123
 📁 Estrutura do Projeto
 text
-frontend/
+frontend-controle-tratamento/
 ├── src/
-│   ├── api/
-│   │   ├── axiosConfig.ts      # Configuração Axios
+│   ├── api/             # Conexão com a API
+│   │   ├── axiosConfig.ts
 │   │   ├── authApi.ts
 │   │   ├── localidadeApi.ts
 │   │   ├── psfApi.ts
 │   │   ├── redeBasicaApi.ts
-│   │   ├── rotinaApi.ts
-│   │   └── relatorioApi.ts
-│   ├── components/
+│   │   ├── relatorioApi.ts
+│   │   └── rotinaApi.ts
+│   ├── components/      # Componentes reutilizáveis
 │   │   ├── layout/
 │   │   │   ├── Header.tsx
-│   │   │   ├── Sidebar.tsx
-│   │   │   └── Layout.tsx
-│   │   ├── ui/
-│   │   │   └── Pagination.tsx
-│   │   └── tables/
-│   ├── contexts/
-│   │   └── AuthContext.tsx
-│   ├── hooks/
+│   │   │   ├── Layout.tsx
+│   │   │   └── Sidebar.tsx
+│   │   └── ui/
+│   │       └── Pagination.tsx
+│   ├── contexts/        # Contextos React
+│   │   ├── AuthContext.tsx
+│   │   └── AuthContextCore.tsx
+│   ├── hooks/           # Hooks customizados
 │   │   └── useAuth.ts
-│   ├── pages/
-│   │   ├── Login.tsx
+│   ├── pages/           # Páginas do sistema
 │   │   ├── Dashboard.tsx
+│   │   ├── Login.tsx
 │   │   ├── Localidades.tsx
 │   │   ├── PSFs.tsx
 │   │   ├── RedeBasica.tsx
-│   │   ├── Rotina.tsx
 │   │   ├── Relatorios.tsx
-│   │   ├── Configuracoes.tsx
-│   │   └── Usuarios.tsx
-│   ├── types/
+│   │   ├── Rotina.tsx
+│   │   ├── Usuarios.tsx
+│   │   └── Configuracoes.tsx
+│   ├── types/           # Tipos TypeScript
 │   │   └── index.ts
-│   ├── utils/
-│   ├── App.tsx
-│   └── main.tsx
-├── .env
+│   └── utils/           # Utilitários
+│       ├── dateUtils.ts
+│       ├── errorHandler.ts
+│       └── downloadUtils.ts
+├── .env.example         # Exemplo de variáveis de ambiente
 ├── package.json
 ├── tailwind.config.js
-├── tsconfig.json
-└── vite.config.ts
-📸 Screenshots
-Dashboard
-https://via.placeholder.com/800x400?text=Dashboard
-
-Login
-https://via.placeholder.com/800x400?text=Login
-
-Rede Básica
-https://via.placeholder.com/800x400?text=Rede+Basica
-
-Relatórios
-https://via.placeholder.com/800x400?text=Relatorios
-
-🚀 Deploy
-Vercel (Recomendado)
-bash
-# Instalar Vercel CLI
-npm install -g vercel
-
-# Deploy
-vercel
-Netlify
-bash
-# Build
-npm run build
-
-# Upload da pasta dist para o Netlify
+└── tsconfig.json
 📄 Licença
-MIT
+MIT © Manoel Mecias do Nascimento
 
 📞 Contato
-Autor: Manoel Mecias do Nascimento
-
-Email: mmnc12@gmail.com
-
+Contato	Informação
+Autor	Manoel Mecias do Nascimento
+Email	mmnc12@gmail.com
+GitHub	https://github.com/mmnc12
+Versão do documento: 1.0.0
+Última atualização: 28/08/2026

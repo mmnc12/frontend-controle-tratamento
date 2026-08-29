@@ -15,7 +15,6 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
     const [user, setUser] = useState<Usuario | null>(null);
     const [loading, setLoading] = useState(true);
-    const [toastId, setToastId] = useState<string | null>(null);
 
     // ============================================
     // VERIFICAR USUÁRIO LOGADO AO INICIAR
@@ -46,7 +45,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // ============================================
 
     const login = async (data: LoginRequest) => {
-        setLoading(true);
         try {
             const response = await authApi.login(data);
             const { token, usuario } = response.data;
@@ -59,19 +57,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
         } catch (error) {
             const apiError = error as ApiError;
 
-            // 🔥 TOAST DE ERRO COM DURAÇÃO MAIS LONGA
-            // Se já tiver um toast de erro, remove e cria outro
-            if (toastId) {
-                toast.dismiss(toastId);
-            }
-
-            const message = apiError.response?.data?.message || 'Erro ao fazer login';
-            const id = toast.error(message, { duration: 5000 });
-            setToastId(id);
+            // 🔥 TOAST DE ERRO COM DURAÇÃO MAIS LONGA (6 segundos)
+            const message = apiError.response?.data?.message || 'E-mail ou senha inválidos';
+            toast.error(message, { duration: 6000 });
 
             throw error;
-        } finally {
-            setLoading(false);
         }
     };
 
