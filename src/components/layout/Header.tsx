@@ -83,11 +83,16 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
     return titles[path] || 'Sistema';
   };
 
+  // ✅ CORRIGIDO: Fecha dropdowns apenas quando clica fora
   useEffect(() => {
-    const handleClickOutside = () => {
-      setShowDropdown(false);
-      setShowNotifications(false);
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.relative')) {
+        setShowDropdown(false);
+        setShowNotifications(false);
+      }
     };
+
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
@@ -118,6 +123,7 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
               onClick={(e) => {
                 e.stopPropagation();
                 setShowNotifications(!showNotifications);
+                setShowDropdown(false); // Fecha o dropdown de perfil
               }}
               className="p-2 rounded-lg hover:bg-slate-100 transition-colors relative"
             >
@@ -210,6 +216,7 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
               onClick={(e) => {
                 e.stopPropagation();
                 setShowDropdown(!showDropdown);
+                setShowNotifications(false); // Fecha o dropdown de notificações
               }}
               className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-slate-100 transition-colors"
             >
