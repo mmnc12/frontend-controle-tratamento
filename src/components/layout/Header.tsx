@@ -83,7 +83,7 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
     return titles[path] || 'Sistema';
   };
 
-  // ✅ CORRIGIDO: Fecha dropdowns apenas quando clica fora
+  // ✅ Fecha dropdowns apenas quando clica fora
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -100,6 +100,7 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
   return (
     <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/50 sticky top-0 z-50">
       <div className="flex items-center justify-between px-4 py-3">
+        {/* Lado esquerdo */}
         <div className="flex items-center gap-3">
           <button
             onClick={onMenuClick}
@@ -116,14 +117,15 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
           </h1>
         </div>
 
+        {/* Lado direito */}
         <div className="flex items-center gap-3">
-          {/* Notificações */}
+          {/* 🔔 Notificações */}
           <div className="relative">
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 setShowNotifications(!showNotifications);
-                setShowDropdown(false); // Fecha o dropdown de perfil
+                setShowDropdown(false);
               }}
               className="p-2 rounded-lg hover:bg-slate-100 transition-colors relative"
             >
@@ -135,9 +137,10 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
               )}
             </button>
 
+            {/* ✅ DROPDOWN DE NOTIFICAÇÕES CORRIGIDO */}
             {showNotifications && (
-              <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-slate-200/50 py-2 z-50 max-h-96 overflow-y-auto">
-                <div className="px-4 py-2 border-b border-slate-100 flex items-center justify-between">
+              <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-xl shadow-lg border border-slate-200/50 py-2 z-[100] max-h-[420px] overflow-y-auto">
+                <div className="px-4 py-2 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white rounded-t-xl">
                   <h3 className="text-sm font-semibold text-slate-800">
                     Revisões Atrasadas
                   </h3>
@@ -145,8 +148,9 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
                     {revisoesAtrasadas.length} paciente(s)
                   </span>
                 </div>
+
                 {revisoesAtrasadas.length > 0 ? (
-                  <div>
+                  <>
                     {revisoesAtrasadas.slice(0, 10).map((p, index) => (
                       <button
                         key={index}
@@ -176,7 +180,7 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
                         + {revisoesAtrasadas.length - 10} pacientes atrasados
                       </div>
                     )}
-                  </div>
+                  </>
                 ) : (
                   <div className="px-4 py-6 text-center">
                     <CheckCircle className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
@@ -184,8 +188,9 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
                     <p className="text-xs text-slate-400">Todas as revisões estão em dia</p>
                   </div>
                 )}
+
                 {revisoesAtrasadas.length > 0 && (
-                  <div className="px-4 py-2 border-t border-slate-100">
+                  <div className="px-4 py-2 border-t border-slate-100 sticky bottom-0 bg-white rounded-b-xl">
                     <button
                       onClick={() => {
                         setShowNotifications(false);
@@ -201,7 +206,7 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
             )}
           </div>
 
-          {/* Botão Sair no Header */}
+          {/* Botão Sair */}
           <button
             onClick={handleLogout}
             className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 rounded-lg transition-colors"
@@ -216,7 +221,7 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
               onClick={(e) => {
                 e.stopPropagation();
                 setShowDropdown(!showDropdown);
-                setShowNotifications(false); // Fecha o dropdown de notificações
+                setShowNotifications(false);
               }}
               className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-slate-100 transition-colors"
             >
@@ -230,7 +235,7 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
             </button>
 
             {showDropdown && (
-              <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-slate-200/50 py-1 z-50 overflow-hidden">
+              <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-slate-200/50 py-1 z-[100] overflow-hidden">
                 <div className="px-4 py-3 border-b border-slate-100">
                   <p className="text-sm font-semibold text-slate-800">{user?.nome}</p>
                   <p className="text-xs text-slate-500 truncate">{user?.email}</p>
