@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Menu,
@@ -27,7 +28,11 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [pacientesRede, setPacientesRede] = useState<RedeBasica[]>([]);
   const [pacientesRotina, setPacientesRotina] = useState<Rotina[]>([]);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, right: 0 });
   const isFirstRender = useRef(true);
+  // ✅ REFS COM TIPO CORRETO
+  const notificationButtonRef = useRef<HTMLButtonElement | null>(null);
+  const profileButtonRef = useRef<HTMLButtonElement | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -83,7 +88,38 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
     return titles[path] || 'Sistema';
   };
 
-  // ✅ Fecha dropdowns apenas quando clica fora
+  // ✅ FUNÇÃO COM TIPO CORRETO
+  const updateDropdownPosition = (buttonRef: React.RefObject<HTMLButtonElement | null>) => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + 8,
+        right: window.innerWidth - rect.right,
+      });
+    }
+  };
+
+  // ✅ Abrir dropdown de notificações
+  const toggleNotifications = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!showNotifications) {
+      updateDropdownPosition(notificationButtonRef);
+    }
+    setShowNotifications(!showNotifications);
+    setShowDropdown(false);
+  };
+
+  // ✅ Abrir dropdown de perfil
+  const toggleProfile = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!showDropdown) {
+      updateDropdownPosition(profileButtonRef);
+    }
+    setShowDropdown(!showDropdown);
+    setShowNotifications(false);
+  };
+
+  // ✅ Fecha dropdowns ao clicar fora
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -92,7 +128,7 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
         setShowNotifications(false);
       }
     };
-
+    
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
@@ -122,11 +158,8 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
           {/* 🔔 Notificações */}
           <div className="relative">
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowNotifications(!showNotifications);
-                setShowDropdown(false);
-              }}
+              ref={notificationButtonRef}
+              onClick={toggleNotifications}
               className="p-2 rounded-lg hover:bg-slate-100 transition-colors relative"
             >
               <Bell className="w-5 h-5 text-slate-500" />
@@ -137,9 +170,17 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
               )}
             </button>
 
-            {/* ✅ DROPDOWN DE NOTIFICAÇÕES CORRIGIDO */}
-            {showNotifications && (
-              <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-xl shadow-lg border border-slate-200/50 py-2 z-[100] max-h-[420px] overflow-y-auto">
+            {/* ✅ DROPDOWN DE NOTIFICAÇÕES COM PORTAL */}
+            {showNotifications && createPortal(
+              <div
+                className="fixed bg-white rounded-xl shadow-2xl border border-slate-200/50 py-2 z-[9999] max-h-[420px] overflow-y-auto"
+                style={{
+                  top: dropdownPosition.top,
+                  right: dropdownPosition.right,
+                  width: Math.min(380, window.innerWidth - 32),
+                  maxWidth: 'calc(100vw - 32px)',
+                }}
+              >
                 <div className="px-4 py-2 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white rounded-t-xl">
                   <h3 className="text-sm font-semibold text-slate-800">
                     Revisões Atrasadas
@@ -202,7 +243,8 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
                     </button>
                   </div>
                 )}
-              </div>
+              </div>,
+              document.body
             )}
           </div>
 
@@ -218,11 +260,8 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
           {/* Perfil do usuário */}
           <div className="relative">
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowDropdown(!showDropdown);
-                setShowNotifications(false);
-              }}
+              ref={profileButtonRef}
+              onClick={toggleProfile}
               className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-slate-100 transition-colors"
             >
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white font-semibold text-sm shadow-md shadow-primary-500/20">
@@ -234,8 +273,16 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
               <ChevronDown className="w-4 h-4 text-slate-400" />
             </button>
 
-            {showDropdown && (
-              <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-slate-200/50 py-1 z-[100] overflow-hidden">
+            {/* ✅ DROPDOWN DE PERFIL COM PORTAL */}
+            {showDropdown && createPortal(
+              <div
+                className="fixed bg-white rounded-xl shadow-2xl border border-slate-200/50 py-1 z-[9999] overflow-hidden"
+                style={{
+                  top: dropdownPosition.top,
+                  right: dropdownPosition.right,
+                  width: Math.min(224, window.innerWidth - 32),
+                }}
+              >
                 <div className="px-4 py-3 border-b border-slate-100">
                   <p className="text-sm font-semibold text-slate-800">{user?.nome}</p>
                   <p className="text-xs text-slate-500 truncate">{user?.email}</p>
@@ -261,7 +308,8 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
                   <LogOut className="w-4 h-4" />
                   Sair
                 </button>
-              </div>
+              </div>,
+              document.body
             )}
           </div>
         </div>

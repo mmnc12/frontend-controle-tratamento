@@ -18,11 +18,11 @@ export default function Layout({ children }: LayoutProps) {
   };
 
   return (
-    <div className="min-h-screen bg-secondary-50 flex">
+    <div className="min-h-screen bg-secondary-50 flex overflow-visible">
       <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
-      <div className="flex-1 flex flex-col min-h-screen lg:ml-[260px]">
+      <div className="flex-1 flex flex-col min-h-screen lg:ml-[260px] overflow-visible">
         <Header onMenuClick={toggleSidebar} isSidebarOpen={isSidebarOpen} />
-        <main className="flex-1 p-4 md:p-6 bg-gradient-to-br from-slate-50 via-white to-slate-100">
+        <main className="flex-1 p-4 md:p-6 bg-gradient-to-br from-slate-50 via-white to-slate-100 overflow-y-auto">
           {children}
         </main>
       </div>
