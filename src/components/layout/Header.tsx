@@ -30,9 +30,11 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
   const [pacientesRotina, setPacientesRotina] = useState<Rotina[]>([]);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, right: 0 });
   const isFirstRender = useRef(true);
-  // ✅ REFS COM TIPO CORRETO
   const notificationButtonRef = useRef<HTMLButtonElement | null>(null);
   const profileButtonRef = useRef<HTMLButtonElement | null>(null);
+
+  // ✅ Verificar se é mobile
+  const isMobile = window.innerWidth < 640;
 
   const loadData = useCallback(async () => {
     try {
@@ -88,7 +90,6 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
     return titles[path] || 'Sistema';
   };
 
-  // ✅ FUNÇÃO COM TIPO CORRETO
   const updateDropdownPosition = (buttonRef: React.RefObject<HTMLButtonElement | null>) => {
     if (buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
@@ -99,7 +100,6 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
     }
   };
 
-  // ✅ Abrir dropdown de notificações
   const toggleNotifications = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!showNotifications) {
@@ -109,7 +109,6 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
     setShowDropdown(false);
   };
 
-  // ✅ Abrir dropdown de perfil
   const toggleProfile = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!showDropdown) {
@@ -119,7 +118,6 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
     setShowNotifications(false);
   };
 
-  // ✅ Fecha dropdowns ao clicar fora
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -128,7 +126,7 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
         setShowNotifications(false);
       }
     };
-    
+
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
@@ -170,14 +168,16 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
               )}
             </button>
 
-            {/* ✅ DROPDOWN DE NOTIFICAÇÕES COM PORTAL */}
+            {/* ✅ DROPDOWN DE NOTIFICAÇÕES COM AJUSTE MOBILE */}
             {showNotifications && createPortal(
               <div
-                className="fixed bg-white rounded-xl shadow-2xl border border-slate-200/50 py-2 z-[9999] max-h-[420px] overflow-y-auto"
+                className="bg-white rounded-xl shadow-2xl border border-slate-200/50 py-2 z-[9999] max-h-[420px] overflow-y-auto"
                 style={{
-                  top: dropdownPosition.top,
-                  right: dropdownPosition.right,
-                  width: Math.min(380, window.innerWidth - 32),
+                  position: 'fixed',
+                  top: isMobile ? '64px' : dropdownPosition.top,
+                  right: isMobile ? '16px' : dropdownPosition.right,
+                  left: isMobile ? '16px' : 'auto',
+                  width: isMobile ? 'auto' : Math.min(380, window.innerWidth - 32),
                   maxWidth: 'calc(100vw - 32px)',
                 }}
               >
@@ -273,14 +273,16 @@ export default function Header({ onMenuClick, isSidebarOpen }: HeaderProps) {
               <ChevronDown className="w-4 h-4 text-slate-400" />
             </button>
 
-            {/* ✅ DROPDOWN DE PERFIL COM PORTAL */}
             {showDropdown && createPortal(
               <div
-                className="fixed bg-white rounded-xl shadow-2xl border border-slate-200/50 py-1 z-[9999] overflow-hidden"
+                className="bg-white rounded-xl shadow-2xl border border-slate-200/50 py-1 z-[9999] overflow-hidden"
                 style={{
-                  top: dropdownPosition.top,
-                  right: dropdownPosition.right,
-                  width: Math.min(224, window.innerWidth - 32),
+                  position: 'fixed',
+                  top: isMobile ? '64px' : dropdownPosition.top,
+                  right: isMobile ? '16px' : dropdownPosition.right,
+                  left: isMobile ? '16px' : 'auto',
+                  width: isMobile ? 'auto' : Math.min(224, window.innerWidth - 32),
+                  maxWidth: 'calc(100vw - 32px)',
                 }}
               >
                 <div className="px-4 py-3 border-b border-slate-100">
