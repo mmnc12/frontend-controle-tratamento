@@ -75,6 +75,8 @@ export interface RedeBasica {
     revisao: 'S' | 'N';
     telefone: string | null;
     observacao: string | null;
+    tratado?: boolean;
+    status_revisao?: 'feita' | 'pendente' | 'no_prazo' | null;
 }
 
 export interface RedeBasicaRequest {
@@ -87,6 +89,7 @@ export interface RedeBasicaRequest {
     entrega_documento?: 'S' | 'N';
     entrega_medicamento?: 'S' | 'N';
     data_tratamento?: string;
+    data_revisao?: string;
     revisao?: 'S' | 'N';
     telefone?: string;
     observacao?: string;
@@ -115,6 +118,8 @@ export interface Rotina {
     revisao: 'S' | 'N';
     telefone: string | null;
     observacao: string | null;
+    tratado?: boolean;
+    status_revisao?: 'feita' | 'pendente' | 'no_prazo' | null;
 }
 
 export interface RotinaRequest {
@@ -130,6 +135,7 @@ export interface RotinaRequest {
     entrega_documento?: 'S' | 'N';
     entrega_medicamento?: 'S' | 'N';
     data_tratamento?: string;
+    data_revisao?: string;
     revisao?: 'S' | 'N';
     telefone?: string;
     observacao?: string;
@@ -147,6 +153,7 @@ export interface FiltrosRedeBasica {
     data_fim?: string;
     tratado?: 'S' | 'N';
     revisao?: 'S' | 'N';
+    status_revisao?: 'feita' | 'pendente' | 'no_prazo';
 }
 
 export interface FiltrosRotina extends FiltrosRedeBasica {
