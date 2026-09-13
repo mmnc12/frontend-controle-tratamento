@@ -15,7 +15,6 @@ import Rotina from './pages/Rotina';
 import Configuracoes from './pages/Configuracoes';
 import Usuarios from './pages/Usuarios';
 
-import TesteDownload from './pages/TesteDownload';
 
 // ============================================
 // COMPONENTE PARA ATUALIZAR TÍTULO
@@ -141,7 +140,6 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
-      <Route path="/teste" element={<TesteDownload />} />
     </Routes>
   );
 };
