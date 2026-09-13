@@ -57,7 +57,7 @@ export default function Rotina() {
     entrega_documento: 'N' as 'S' | 'N',
     entrega_medicamento: 'N' as 'S' | 'N',
     data_tratamento: '',
-    revisao: 'N' as 'S' | 'N',
+    data_revisao: '',   // ⚠️ NOVO CAMPO
     telefone: '',
     observacao: ''
   });
@@ -94,7 +94,6 @@ export default function Rotina() {
         psfApi.listar()
       ]);
 
-
       setPacientes(pacientesResponse.data || []);
       setTotalPages(pacientesResponse.pagination?.totalPages || 1);
       setTotalItems(pacientesResponse.pagination?.total || 0);
@@ -102,7 +101,6 @@ export default function Rotina() {
       setPsfs(psfsData);
     } catch (error) {
       console.error('❌ Erro ao carregar dados:', error);
-      // Mostrar erro mais específico
       if (error instanceof Error) {
         toast.error(`Erro ao carregar dados: ${error.message}`);
       } else {
@@ -137,7 +135,6 @@ export default function Rotina() {
     debounceTimer.current = setTimeout(() => {
       setDebouncedSearchTerm(value);
       setCurrentPage(1);
-      // Passar o valor diretamente para loadData
       loadData(value);
     }, 500);
   };
@@ -154,7 +151,6 @@ export default function Rotina() {
       clearTimeout(debounceTimer.current);
       debounceTimer.current = null;
     }
-    // Passar string vazia para loadData
     loadData('');
   };
 
@@ -208,6 +204,15 @@ export default function Rotina() {
         }
       }
 
+      let dataRevisao = '';
+      if (paciente.data_revisao) {
+        if (paciente.data_revisao.includes('T')) {
+          dataRevisao = paciente.data_revisao.split('T')[0];
+        } else {
+          dataRevisao = paciente.data_revisao;
+        }
+      }
+
       setEditingId(paciente.id);
       setFormData({
         ano: paciente.ano,
@@ -222,7 +227,7 @@ export default function Rotina() {
         entrega_documento: paciente.entrega_documento,
         entrega_medicamento: paciente.entrega_medicamento,
         data_tratamento: dataTratamento,
-        revisao: paciente.revisao,
+        data_revisao: dataRevisao,
         telefone: paciente.telefone || '',
         observacao: paciente.observacao || ''
       });
@@ -241,7 +246,7 @@ export default function Rotina() {
         entrega_documento: 'N',
         entrega_medicamento: 'N',
         data_tratamento: '',
-        revisao: 'N',
+        data_revisao: '',
         telefone: '',
         observacao: ''
       });
@@ -293,8 +298,9 @@ export default function Rotina() {
       return;
     }
 
-    if (formData.revisao === 'S' && !formData.data_tratamento) {
-      toast.error('Não é possível marcar revisão como feita sem uma data de tratamento');
+    // Validação: data_revisao só com data_tratamento
+    if (formData.data_revisao && !formData.data_tratamento) {
+      toast.error('Não é possível registrar uma data de revisão sem uma data de tratamento');
       return;
     }
 
@@ -331,7 +337,7 @@ export default function Rotina() {
       entrega_documento: formData.entrega_documento,
       entrega_medicamento: formData.entrega_medicamento,
       data_tratamento: formData.data_tratamento || undefined,
-      revisao: formData.revisao,
+      data_revisao: formData.data_revisao || undefined,
       telefone: formData.telefone || undefined,
       observacao: formData.observacao || undefined
     };
@@ -409,7 +415,6 @@ export default function Rotina() {
           return;
       }
 
-      // Adicionar filtros à URL
       const params = new URLSearchParams();
       if (filtros.ano) params.append('ano', String(filtros.ano));
       if (filtros.localidade_id) params.append('localidade_id', String(filtros.localidade_id));
@@ -444,12 +449,11 @@ export default function Rotina() {
         return;
       }
 
-      // 🔥 PARTE QUE FALTAVA - DOWNLOAD
       const downloadUrl = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = downloadUrl;
       const extensao = formato === 'excel' ? 'xlsx' : formato;
-      link.download = `relatorio_rede_basica.${extensao}`;
+      link.download = `relatorio_rotina.${extensao}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -514,7 +518,7 @@ export default function Rotina() {
         </div>
       </div>
 
-      {/* Busca por nome - EM TEMPO REAL */}
+      {/* Busca por nome */}
       <div className="card">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1 relative">
@@ -594,6 +598,21 @@ export default function Rotina() {
               </select>
             </div>
           </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+            <div>
+              <label className="input-label">Status Revisão</label>
+              <select
+                className="input-field"
+                value={filtros.status_revisao || ''}
+                onChange={(e) => setFiltros({ ...filtros, status_revisao: (e.target.value || undefined) as 'feita' | 'pendente' | 'no_prazo' | undefined })}
+              >
+                <option value="">Todos</option>
+                <option value="feita">Feita</option>
+                <option value="no_prazo">No prazo</option>
+                <option value="pendente">Pendente</option>
+              </select>
+            </div>
+          </div>
           <div className="flex items-center gap-3 mt-4">
             <button onClick={aplicarFiltros} className="btn-primary">
               Aplicar Filtros
@@ -629,7 +648,7 @@ export default function Rotina() {
                     <th>PSF</th>
                     <th>Localidade</th>
                     <th>Tratado</th>
-                    <th>Data Revisão</th>
+                    <th>Status Revisão</th>
                     <th className="text-right">Ações</th>
                   </tr>
                 </thead>
@@ -646,43 +665,47 @@ export default function Rotina() {
                         <td>{item.ano}</td>
                         <td>{item.psf_nome || '-'}</td>
                         <td>{item.localidade_nome || '-'}</td>
+
+                        {/* ⚠️ COLUNA TRATADO - Usa item.tratado */}
                         <td>
-                          <span className={`badge ${item.entrega_medicamento === 'S' ? 'badge-success' : 'badge-warning'}`}>
-                            {item.entrega_medicamento === 'S' ? 'Sim' : 'Não'}
+                          <span className={`badge ${item.tratado ? 'badge-success' : 'badge-warning'}`}>
+                            {item.tratado ? 'Sim' : 'Não'}
                           </span>
                         </td>
+
+                        {/* ⚠️ COLUNA STATUS REVISÃO - Usa item.status_revisao */}
                         <td>
                           <div className="flex items-center gap-2">
-                            {item.revisao === 'S' ? (
+                            {item.status_revisao === 'feita' && (
                               <span className="flex items-center gap-1 text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
                                 <CheckCircle className="w-4 h-4" />
                                 <span className="text-sm font-medium">Revisão feita</span>
                               </span>
-                            ) : dataRevisao ? (
-                              (() => {
-                                const hoje = new Date();
-                                hoje.setHours(0, 0, 0, 0);
-                                const dataRev = new Date(dataRevisao);
-                                dataRev.setHours(0, 0, 0, 0);
-                                const estaAtrasada = dataRev < hoje;
-
-                                return estaAtrasada ? (
-                                  <span className="flex items-center gap-1 text-red-600 bg-red-50 px-2 py-1 rounded-full font-bold">
-                                    <AlertTriangle className="w-4 h-4" />
-                                    <span>Atrasada! {new Date(dataRevisao).toLocaleDateString('pt-BR')}</span>
-                                  </span>
-                                ) : (
-                                  <span className="flex items-center gap-1 text-amber-600 bg-amber-50 px-2 py-1 rounded-full">
-                                    <Calendar className="w-4 h-4" />
-                                    <span className="text-sm font-medium">{new Date(dataRevisao).toLocaleDateString('pt-BR')}</span>
-                                  </span>
-                                );
-                              })()
-                            ) : (
+                            )}
+                            {item.status_revisao === 'pendente' && (
+                              <span className="flex items-center gap-1 text-red-600 bg-red-50 px-2 py-1 rounded-full font-bold">
+                                <AlertTriangle className="w-4 h-4" />
+                                <span>
+                                  Pendente
+                                  {dataRevisao && ` (${new Date(dataRevisao).toLocaleDateString('pt-BR')})`}
+                                </span>
+                              </span>
+                            )}
+                            {item.status_revisao === 'no_prazo' && (
+                              <span className="flex items-center gap-1 text-amber-600 bg-amber-50 px-2 py-1 rounded-full">
+                                <Calendar className="w-4 h-4" />
+                                <span className="text-sm font-medium">
+                                  No prazo
+                                  {dataRevisao && ` (${new Date(dataRevisao).toLocaleDateString('pt-BR')})`}
+                                </span>
+                              </span>
+                            )}
+                            {!item.status_revisao && (
                               <span className="text-slate-400 text-sm">-</span>
                             )}
                           </div>
                         </td>
+
                         <td className="text-right">
                           <div className="flex items-center justify-end gap-1">
                             <button
@@ -914,45 +937,35 @@ export default function Rotina() {
 
                         if (pendentes.length > 0) {
                           toast.error(`Para registrar tratamento, é necessário marcar "Sim" em: ${pendentes.join(', ')}`);
-                        } else {
-                          const dataRevisao = new Date(value);
-                          dataRevisao.setDate(dataRevisao.getDate() + 40);
-                          toast.success(`Data de revisão prevista: ${dataRevisao.toLocaleDateString('pt-BR')}`);
                         }
                       }
                     }}
                   />
-                  {formData.data_tratamento && (
-                    <p className="text-xs text-slate-500 mt-1">
-                      📅 Revisão prevista: {new Date(new Date(formData.data_tratamento).setDate(new Date(formData.data_tratamento).getDate() + 40)).toLocaleDateString('pt-BR')}
-                    </p>
-                  )}
                   {formData.data_tratamento && (formData.entrega_medicamento !== 'S' || formData.entrega_documento !== 'S' || formData.entrega_resultado !== 'S') && (
                     <p className="text-xs text-red-500 mt-1">
                       ⚠️ Para registrar tratamento, é necessário marcar "Sim" em todas as entregas (Medicamento, Documento e Resultado)
                     </p>
                   )}
                 </div>
+
+                {/* ⚠️ NOVO CAMPO: Data Revisão (manual) */}
                 <div>
-                  <label className="input-label">Revisão</label>
-                  <select
+                  <label className="input-label">Data Revisão</label>
+                  <input
+                    type="date"
                     className="input-field"
-                    value={formData.revisao}
-                    onChange={(e) => {
-                      const value = e.target.value as 'S' | 'N';
-                      if (value === 'S' && !formData.data_tratamento) {
-                        toast.error('Não é possível marcar revisão como feita sem data de tratamento');
-                        return;
-                      }
-                      setFormData({ ...formData, revisao: value });
-                    }}
-                  >
-                    <option value="N">Pendente</option>
-                    <option value="S">Feita</option>
-                  </select>
-                  {formData.revisao === 'S' && !formData.data_tratamento && (
-                    <p className="text-xs text-red-500 mt-1">
-                      ⚠️ Para marcar revisão como feita, é necessário ter uma data de tratamento
+                    value={formData.data_revisao}
+                    onChange={(e) => setFormData({ ...formData, data_revisao: e.target.value })}
+                    disabled={!formData.data_tratamento}
+                  />
+                  {!formData.data_tratamento && (
+                    <p className="text-xs text-slate-500 mt-1">
+                      Informe primeiro a data de tratamento
+                    </p>
+                  )}
+                  {formData.data_revisao && formData.data_tratamento && (
+                    <p className="text-xs text-emerald-600 mt-1">
+                      ✅ Revisão será marcada como feita automaticamente
                     </p>
                   )}
                 </div>
